@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Elite Scholar OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link id="dynamic-manifest" rel="manifest">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* Modern Premium CSS Variables */
+        :root {
+            --bg-color: #f3f4f6; --card-bg: #ffffff; --text-main: #1f2937; 
+            --text-sub: #6b7280; --border-color: #e5e7eb; --hover-bg: #f9fafb; 
+            --primary: #4f46e5; --secondary: #0ea5e9; --accent: #f59e0b;
+        }
+        body.dark-mode {
+            --bg-color: #0f172a; --card-bg: #1e293b; --text-main: #f8fafc; 
+            --text-sub: #94a3b8; --border-color: #334155; --hover-bg: #0f172a; 
+            --primary: #6366f1; --secondary: #38bdf8; --accent: #fbbf24;
+        }
+
+        body {
+            background-color: var(--bg-color); font-family: 'Poppins', sans-serif;
+            margin: 0; padding: 0; display: flex; flex-direction: column; overflow: hidden; touch-action: pan-y;
+            height: 100vh; width: 100vw; transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        /* Toast Notifications */
+        #toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: var(--text-main); color: var(--card-bg); padding: 12px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), toastOut 0.4s 2.5s forwards; }
+        @keyframes toastIn { from { transform: translateY(30px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; } }
+
+        /* Slider & A4 Container */
+        .slider-window { width: 100vw; height: 100vh; overflow: hidden; position: relative; }
+        .pages-wrapper { display: flex; height: 100%; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); width: fit-content; }
+        .page-card { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; flex-shrink: 0; position: relative; padding: 10px 0; box-sizing: border-box; }
+        
+        /* Modernized A4 Wrapper */
+        .a4-wrapper { background: var(--card-bg); width: 96vw; max-width: 1300px; height: 88vh; box-shadow: 0 20px 40px rgba(0,0,0,0.08); border-radius: 16px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; transition: background 0.3s; position: relative; border: 1px solid var(--border-color);}
+
+        /* Headers */
+        .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; flex-shrink: 0; }
+        .header-left h1 { color: var(--text-main); font-size: 22px; margin: 0 0 4px 0; text-transform: uppercase; font-weight: 900; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;}
+        .header-left p { color: var(--text-sub); font-size: 13px; margin: 0; font-weight: 600;}
+        .dynamic-greeting { font-size: 12px; color: var(--primary); font-weight: 800; text-transform: uppercase; letter-spacing: 1px;}
+        
+        .header-stats { text-align: right; }
+        .streak-badge { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 8px; display: inline-block; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);}
+        .progress-container { width: 160px; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-top: 5px;}
+        .progress-bar { height: 100%; background: #10b981; width: 0%; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        /* Modern Table Setup */
+        table { width: 100%; height: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+        .table-container { flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; }
+        th, td { text-align: center; word-wrap: break-word; vertical-align: middle; line-height: 1.2; overflow: hidden; border-radius: 6px; }
+        th { color: white; font-weight: 700; font-size: 12px; padding: 8px 4px; height: 8%; cursor: pointer; transition: transform 0.2s, filter 0.2s; position: relative;}
+        th:active { transform: scale(0.96); filter: brightness(0.9); }
+        th span { font-size: 10px; font-weight: 500; display: block; margin-top: 2px; opacity: 0.9; }
+        
+        .type-badge { display: inline-block; font-size: 8px; font-weight: 800; background: rgba(0,0,0,0.5); color: white; padding: 3px 8px; border-radius: 6px; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; backdrop-filter: blur(4px); }
+        
+        td { font-size: 10.5px; font-weight: 600; padding: 4px; height: 7%; cursor: pointer; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); user-select: none; color: var(--text-main); border: 1px solid var(--border-color); background: var(--bg-color);}
+        td:hover { background-color: var(--hover-bg); transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.05);} 
+        td:active { transform: scale(0.95); }
+        td.completed { background-color: #10b981 !important; color: white !important; font-weight: 700; border-color: #059669; }
+        td.completed::after { content: '★'; position: absolute; top: 4px; right: 6px; font-size: 10px; opacity: 0.8; }
+        td.empty-cell { background-color: transparent; cursor: default; border-color: transparent; box-shadow: none;}
+        td.empty-cell:hover { background-color: transparent; transform: none; box-shadow: none;}
+
+        /* Floating Widgets */
+        .page-indicator-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 12px; align-items: center;}
+        .page-indicator { font-size: 13px; font-weight: 700; color: var(--text-sub); background: var(--card-bg); padding: 8px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
+        .live-clock { font-size: 13px; font-weight: 700; color: white; background: var(--text-main); padding: 8px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        
+        .floating-actions { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 20; }
+        .action-btn { background: var(--card-bg); color: var(--text-main); width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 22px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); cursor: pointer; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid var(--border-color); }
+        .action-btn.primary { background: var(--primary); color: white; border: none; }
+        .action-btn:active { transform: scale(0.85); }
+
+        .top-widgets { position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 20;}
+        .pomodoro-widget { background: var(--card-bg); border-radius: 20px; padding: 10px 15px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; border: 2px solid var(--primary); cursor: pointer; transition: 0.2s;}
+        .pomodoro-widget:active { transform: scale(0.95); }
+        .pomodoro-widget span { font-weight: 800; color: var(--text-main); font-size: 15px; }
+        .pomodoro-widget button { background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; padding: 5px 12px; font-weight: 700; font-family: 'Poppins', sans-serif;}
+
+        /* Glassmorphism Overlays & Modals */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); z-index: 100; backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.4s ease; }
+        
+        .tools-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -40%); background: var(--card-bg); width: 85%; max-width: 360px; padding: 30px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); z-index: 101; display: none; text-align: center; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid var(--border-color);}
+        .tools-modal h2 { margin-top: 0; color: var(--text-main); font-size: 20px; text-transform: uppercase; font-weight: 900;}
+        .calendar-controls { display: flex; gap: 10px; margin-bottom: 25px; justify-content: center; }
+        .calendar-controls select, .calendar-controls input { padding: 10px; border: 2px solid var(--border-color); border-radius: 8px; font-weight: 600; font-family: 'Poppins', sans-serif; background: var(--hover-bg); color: var(--text-main); outline: none; transition: 0.2s;}
+        .calendar-controls select:focus, .calendar-controls input:focus { border-color: var(--primary); }
+        .calendar-controls button { background: var(--primary); color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 700; font-family: 'Poppins', sans-serif; cursor: pointer; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);}
+        
+        .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+        .tool-btn { background: var(--hover-bg); border: 1px solid var(--border-color); padding: 15px 10px; border-radius: 12px; font-weight: 600; font-family: 'Poppins', sans-serif; color: var(--text-main); cursor: pointer; font-size: 13px; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px;}
+        .tool-btn i { font-size: 20px; font-style: normal;}
+        .tool-btn:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-2px);}
+
+        /* Premium Daily Modal */
+        .daily-modal { position: fixed; top: 100vh; left: 0; width: 100vw; height: 100vh; background: var(--bg-color); z-index: 105; transition: top 0.5s cubic-bezier(0.22, 1, 0.36, 1); display: flex; flex-direction: column; box-sizing: border-box; }
+        .daily-modal.open { top: 0; }
+        .daily-header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 20px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); z-index: 10; }
+        .daily-header-left { display: flex; flex-direction: column; }
+        .daily-header h2 { margin: 0; font-size: 22px; text-transform: uppercase; font-weight: 900; letter-spacing: 0.5px;}
+        .daily-stats-text { font-size: 12px; opacity: 0.9; font-weight: 500; margin-top: 4px; }
+        .header-actions { display: flex; gap: 10px; }
+        .icon-btn { background: rgba(255,255,255,0.25); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; cursor: pointer; transition: 0.2s; backdrop-filter: blur(4px);}
+        .icon-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
+        
+        .daily-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
+        .daily-progress-wrap { background: var(--card-bg); padding: 18px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--border-color); }
+        .dp-bar-bg { width: 100%; height: 10px; background: var(--bg-color); border-radius: 5px; overflow: hidden; margin-top: 10px; border: 1px solid var(--border-color);}
+        .dp-bar-fill { height: 100%; background: linear-gradient(90deg, #10b981, #34d399); width: 0%; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        .daily-widgets { display: flex; gap: 12px; margin-bottom: 20px;}
+        .daily-notes { flex-grow: 1; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; font-family: 'Poppins', sans-serif; font-size: 13px; color: var(--text-main); font-weight: 500; resize: none; outline: none; transition: border 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.02);}
+        .daily-notes:focus { border-color: var(--primary); }
+        .add-task-btn { background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; padding: 0 20px; font-size: 24px; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3); transition: 0.2s;}
+        .add-task-btn:active { transform: scale(0.9); }
+
+        /* Modern Floating Task Cards */
+        .daily-table { width: 100%; border-collapse: separate; border-spacing: 0 12px; }
+        .daily-table tr { background: var(--card-bg); box-shadow: 0 4px 12px rgba(0,0,0,0.04); border-radius: 12px; transition: transform 0.2s, background 0.3s, box-shadow 0.2s; cursor: pointer; opacity: 0; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; border: 1px solid var(--border-color); display: flex;}
+        .daily-table tr:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+        @keyframes popIn { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        
+        .daily-table td { padding: 18px 20px; text-align: left; font-size: 14.5px; font-weight: 600; color: var(--text-main); border-radius: 12px; flex-grow: 1; display: flex; align-items: center; justify-content: space-between; border: none;}
+        .daily-table tr.completed { background: #10b981; border-color: #059669; }
+        .daily-table tr.completed td { color: white; }
+        
+        /* Task Tags */
+        .task-tag { font-size: 10px; padding: 4px 10px; border-radius: 8px; margin-left: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;}
+        .tag-hard { background: #fef3c7; color: #d97706; }
+        .tag-custom { background: #dbeafe; color: #2563eb; }
+        .daily-table tr.completed .task-tag { background: rgba(255,255,255,0.25); color: white; }
+
+        /* Protocol Panel */
+        .config-panel { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--card-bg); padding: 30px 25px; border-top: 1px solid var(--border-color); box-shadow: 0 -15px 40px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1); z-index: 20; box-sizing: border-box; border-top-left-radius: 24px; border-top-right-radius: 24px; }
+        .config-panel.open { transform: translateY(0); }
+        .config-panel h3 { margin: 0 0 20px 0; font-size: 18px; color: var(--text-main); text-transform: uppercase; font-weight: 900;}
+        .config-grid { display: flex; flex-direction: column; gap: 18px; }
+        .config-group select { padding: 14px; border: 2px solid var(--border-color); border-radius: 10px; font-size: 14px; font-weight: 600; font-family: 'Poppins', sans-serif; color: var(--text-main); background: var(--hover-bg); outline: none; transition: 0.2s;}
+        .config-group select:focus { border-color: var(--primary); }
+
+        /* Custom PWA Installer */
+        #install-popup { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); padding: 30px 25px 40px 25px; box-shadow: 0 -15px 50px rgba(0,0,0,0.15); z-index: 9999; border-top-left-radius: 30px; border-top-right-radius: 30px; text-align: center; box-sizing: border-box; animation: slideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-top: 1px solid var(--border-color);}
+        .install-header { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 20px; }
+        #install-popup img { width: 60px; height: 60px; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .install-text { text-align: left; }
+        .install-text h3 { margin: 0; color: var(--text-main); font-size: 20px; font-weight: 900;}
+        .install-text p { margin: 4px 0 0 0; color: var(--text-sub); font-size: 13px; font-weight: 500;}
+        .install-actions { display: flex; gap: 12px; justify-content: center; }
+        #install-popup button { background: var(--primary); color: white; border: none; padding: 14px 25px; border-radius: 14px; font-family: 'Poppins', sans-serif; cursor: pointer; font-weight: 700; font-size: 16px; flex-grow: 1; box-shadow: 0 6px 20px rgba(79, 70, 229, 0.3); transition: 0.2s; }
+        #install-popup button:active { transform: scale(0.95); }
+        #install-popup button.close-btn { background: var(--hover-bg); color: var(--text-main); flex-grow: 0; box-shadow: none; border: 2px solid var(--border-color);}
+
+        /* STRICT A4 HD PRINT CSS ENGINE */
+        @media print {
+            @page { size: A4 landscape; margin: 0; }
+            html, body { background: white !important; overflow: visible !important; height: auto !important; margin: 0 !important; padding: 0 !important; color: black !important;}
+            
+            body.export-mode .slider-window { overflow: visible !important; height: auto !important; position: static !important; }
+            body.export-mode .pages-wrapper { display: block !important; transform: none !important; width: 100% !important; height: auto !important; }
+            body.export-mode .page-card { display: block !important; width: 100% !important; height: auto !important; page-break-after: always; padding: 0 !important; margin: 0 !important; align-items: flex-start !important;}
+            body.export-mode .a4-wrapper { display: block !important; width: 297mm !important; height: 210mm !important; border: none !important; box-shadow: none !important; margin: 0 auto !important; padding: 12mm !important; border-radius: 0 !important; background: white !important;}
+            
+            body.export-mode th { color: black !important; background-color: #f3f4f6 !important; border: 1px solid #000 !important; font-size: 10px !important;}
+            body.export-mode td { border: 1px solid #000 !important; color: black !important; background: white !important; font-size: 9px !important; padding: 2px !important;}
+            body.export-mode td.completed { background-color: #d1fae5 !important; color: black !important; font-weight: 800 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+            
+            body.export-day-mode .daily-modal { display: block !important; position: static !important; width: 100% !important; height: auto !important; background: white !important; }
+            body.export-day-mode .daily-header { background: white !important; color: black !important; box-shadow: none !important; border-bottom: 3px solid #000; padding: 10mm 10mm 5mm 10mm !important;}
+            body.export-day-mode .daily-header h2 { color: black !important; font-size: 28px !important; }
+            body.export-day-mode .daily-stats-text { color: #333 !important; font-size: 14px !important;}
+            body.export-day-mode .daily-content { padding: 10mm !important; }
+            body.export-day-mode .daily-table tr { border: 2px solid #000 !important; box-shadow: none !important; margin-bottom: 8px !important; page-break-inside: avoid; border-radius: 0 !important;}
+            body.export-day-mode .daily-table td { color: black !important; border: none !important; font-size: 16px !important;}
+            body.export-day-mode .task-tag { border: 1px solid #000; color: #000 !important; background: transparent !important;}
+            body.export-day-mode .slider-window { display: none !important; }
+
+            #toast-container, .top-widgets, .page-indicator-container, .floating-actions, .overlay, #tools-modal, #install-popup, .header-actions, .daily-widgets, #config-panel, .daily-progress-wrap { display: none !important; opacity: 0 !important; visibility: hidden !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="top-widgets">
+        <div class="pomodoro-widget" onclick="togglePomodoro()">
+            ⏱️ <span id="pomo-time">25:00</span>
+            <button id="pomo-btn">Focus</button>
+        </div>
+    </div>
+
+    <audio id="success-sound" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" preload="auto"></audio>
+
+    <div class="overlay" id="overlay" onclick="closeModals()"></div>
+
+    <div class="tools-modal" id="tools-modal">
+        <h2>System Dashboard</h2>
+        <div class="calendar-controls">
+            <input type="number" id="sysYear" value="2026" min="2020" max="2100">
+            <select id="sysMonth">
+                <option value="0">January</option><option value="1">February</option>
+                <option value="2">March</option><option value="3">April</option>
+                <option value="4">May</option><option value="5">June</option>
+                <option value="6">July</option><option value="7">August</option>
+                <option value="8">September</option><option value="9">October</option>
+                <option value="10">November</option><option value="11">December</option>
+            </select>
+            <button onclick="loadCustomDate()">GO</button>
+        </div>
+        <div class="tools-grid">
+            <button class="tool-btn" onclick="toggleDarkMode()"><i>🌙</i> Theme</button>
+            <button class="tool-btn" onclick="exportData()"><i>💾</i> Backup</button>
+            <button class="tool-btn" onclick="resetMonth()" style="color: #ef4444; border-color:#ef4444;"><i>🗑️</i> Clear</button>
+        </div>
+    </div>
+
+    <div class="daily-modal" id="daily-modal">
+        <div class="daily-header" id="daily-header-bg">
+            <div class="daily-header-left">
+                <h2 id="daily-title">Date</h2>
+                <div class="daily-stats-text" id="daily-sub-stats">Est. Focus: 0 Hrs | Pending: 0</div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="printSingleDay()" title="Print Specific Day">🖨️</button>
+                <button class="icon-btn" onclick="toggleConfigPanel()" title="Change Protocol">⚙️</button>
+                <button class="icon-btn" onclick="closeDailyModal()" title="Close">✖</button>
+            </div>
+        </div>
+        
+        <div class="daily-content">
+            <div class="daily-progress-wrap">
+                <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:800; color:var(--text-main);">
+                    <span id="modal-prog-text">Tasks: 0/0 Completed</span>
+                    <span id="modal-prog-percent">0%</span>
+                </div>
+                <div class="dp-bar-bg"><div class="dp-bar-fill" id="modal-prog-fill"></div></div>
+            </div>
+
+            <div class="daily-widgets">
+                <textarea class="daily-notes" id="daily-notes" placeholder="Set your goals for the day. E.g., BPSC Module 4 Revision, B.Sc. Assignment..." oninput="saveNotes()"></textarea>
+                <button class="add-task-btn" onclick="addCustomTask()" title="Pin a Custom Task">+</button>
+            </div>
+            
+            <table class="daily-table"><tbody id="daily-activities"></tbody></table>
+        </div>
+
+        <div class="config-panel" id="config-panel">
+            <button class="close-config-btn" onclick="toggleConfigPanel()">✖</button>
+            <h3>Protocol Config</h3>
+            <div class="config-grid">
+                <div class="config-group">
+                    <select id="dayTypeSelect" onchange="handleModeLogic()">
+                        <option value="Normal">Normal Regular Day</option>
+                        <option value="External">External Exam Leave</option>
+                        <option value="Internal">Internal Exam Leave</option>
+                        <option value="Special">Special Leave Day</option>
+                        <option value="Leave">Full Absence Leave</option>
+                    </select>
+                </div>
+                <div class="config-group">
+                    <select id="activityModeSelect">
+                        <option value="Normal">Normal Only</option>
+                        <option value="SpecialOnly">Special Mode Only</option>
+                        <option value="Both">Both (Mixed Action)</option>
+                    </select>
+                </div>
+                <button onclick="saveDayProtocol()" style="background:var(--text-main); color:var(--card-bg); padding:16px; border-radius:12px; font-weight:800; font-family:'Poppins', sans-serif; border:none; cursor:pointer; font-size:15px; text-transform:uppercase;">Apply Setup</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="install-popup">
+        <div class="install-header">
+            <img id="popup-icon" alt="App Icon">
+            <div class="install-text"><h3>Elite Scholar OS</h3><p>Install Web App for Offline Access</p></div>
+        </div>
+        <div class="install-actions">
+            <button id="install-btn">Install Now</button>
+            <button class="close-btn" onclick="document.getElementById('install-popup').style.display='none'">✖</button>
+        </div>
+    </div>
+
+    <div class="slider-window" id="planner-container"><div class="pages-wrapper" id="pages-wrapper"></div></div>
+    
+    <div class="page-indicator-container">
+        <div class="live-clock" id="live-clock">00:00:00</div>
+        <div class="page-indicator" id="page-indicator">Loading...</div>
+    </div>
+
+    <div class="floating-actions">
+        <div class="action-btn primary" onclick="openTools()" title="Settings">⚙️</div>
+        <div class="action-btn" onclick="downloadHDPrint()" title="HD A4 Print" style="background:var(--text-main); color:var(--card-bg);">🖨️</div>
+    </div>
+
+    <script>
+        // NEW LOCAL STORAGE KEY PREFIX: elite_os_
+        const DB_PREFIX = "elite_os_";
+
+        const SYLLABUS_DB = {
+            'Normal': [ "Objective Resolution", "CAP (Current Affairs & AI)", "General Studies & Mains Practice", "General Studies Module-II", "Mathematics", "Reasoning", "English", "Parcham Classes", "NCERT Foundation", "B.Sc. Mathematics", "Exercise & Self Control", "Digital Technology" ],
+            'External': ["Exam Module-A", "Exam Module B", "Exam Module C", "Exam Module D", "Exam Module E", "Exam Practice", "NCERT Book", "Oneshot Merathon General Study"],
+            'Internal': ["Test Module", "NCERT STEM Book", "NCERT SST Book", "General Studies Merathon"],
+            'Special': ["NCERT STEM Book", "NCERT SST Book", "General Studies Merathon", "Featured Study"],
+            'Leave': ["🛑 Official Leave Day", "Complete Rest & Recovery"]
+        };
+
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        
+        // Modern Premium Colors for Headers
+        const headerColors = ["#ef4444", "#f97316", "#eab308", "#10b981", "#06b6d4", "#3b82f6", "#8b5cf6"];
+        
+        let currentPage = 0; let totalPages = 0; let currentMonth = 4; let currentYear = 2026; let activeModalDayId = null;
+        function safeId(str) { return str.replace(/<[^>]*>?/gm, '').replace(/[^a-zA-Z0-9]/g, ''); }
+
+        // Dynamic Icon Injection (Diamond Target)
+        const modernIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="background: linear-gradient(135deg, #4f46e5, #0ea5e9); border-radius:20px;"><path d="M50 15 L85 50 L50 85 L15 50 Z" fill="#ffffff" opacity="0.9"/><circle cx="50" cy="50" r="12" fill="#ffffff"/></svg>`;
+        const encodedIcon = "data:image/svg+xml;base64," + btoa(modernIconSvg);
+        document.getElementById('popup-icon').src = encodedIcon;
+
+        const manifestData = {
+            "name": "Elite Scholar OS", "short_name": "Scholar OS",
+            "display": "standalone", "background_color": "#f3f4f6", "theme_color": "#4f46e5",
+            "icons": [{"src": encodedIcon, "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable"}]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+        document.getElementById('dynamic-manifest').href = URL.createObjectURL(manifestBlob);
+
+        // Smart Toast System
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div'); toast.className = 'toast'; toast.innerText = message;
+            container.appendChild(toast); setTimeout(() => toast.remove(), 2800);
+        }
+
+        // Time Based Greeting
+        function getGreeting() {
+            let hour = new Date().getHours();
+            if(hour < 12) return "Good Morning, Scholar";
+            if(hour < 17) return "Good Afternoon, Scholar";
+            return "Good Evening, Scholar";
+        }
+
+        // Theme System
+        function initTheme() {
+            let manual = localStorage.getItem(DB_PREFIX + 'engine_dark');
+            let prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if(manual === 'true' || (manual === null && prefersDark)) document.body.classList.add('dark-mode');
+        }
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem(DB_PREFIX + 'engine_dark', document.body.classList.contains('dark-mode'));
+            showToast(document.body.classList.contains('dark-mode') ? "Dark Theme Enabled 🌙" : "Light Theme Enabled ☀️");
+        }
+
+        // Pomodoro
+        let pomoTime = 1500; let pomoTimer = null; let isPomoRunning = false;
+        function togglePomodoro() {
+            const btn = document.getElementById('pomo-btn');
+            if(isPomoRunning) { clearInterval(pomoTimer); btn.innerText = "Focus"; btn.style.background = "var(--primary)"; showToast("Focus Paused"); } 
+            else {
+                btn.innerText = "Pause"; btn.style.background = "#ef4444"; showToast("Deep Work Started! 🔥");
+                pomoTimer = setInterval(() => {
+                    pomoTime--; document.getElementById('pomo-time').innerText = `${Math.floor(pomoTime/60).toString().padStart(2,'0')}:${(pomoTime%60).toString().padStart(2,'0')}`;
+                    if(pomoTime <= 0) { clearInterval(pomoTimer); alert("Session Complete!"); pomoTime = 1500; btn.innerText = "Focus"; document.getElementById('success-sound').play(); }
+                }, 1000);
+            }
+            isPomoRunning = !isPomoRunning;
+        }
+
+        // Data Engine (Using new DB_PREFIX)
+        function getDayProtocolConfig(fullDateId) { let c = localStorage.getItem(`${DB_PREFIX}protocol_${fullDateId}`); return c ? JSON.parse(c) : { type: 'Normal', mode: 'Normal' }; }
+        function getCustomTasks(fullDateId) { let d = localStorage.getItem(`${DB_PREFIX}custom_${fullDateId}`); return d ? JSON.parse(d) : []; }
+        
+        function getActivitiesForDay(fullDateId) {
+            let config = getDayProtocolConfig(fullDateId); let cacheKey = `${DB_PREFIX}acts_v1_${fullDateId}_${config.type}_${config.mode}`;
+            let stored = localStorage.getItem(cacheKey); if (stored) return JSON.parse(stored);
+            let base = [];
+            if (config.type === 'Leave') base = SYLLABUS_DB['Leave']; else if (config.type === 'Normal') base = SYLLABUS_DB['Normal'];
+            else if (config.mode === 'Both') base = [...SYLLABUS_DB['Normal'], ...SYLLABUS_DB[config.type]]; else base = SYLLABUS_DB[config.type];
+            if(config.type !== 'Leave') { let arr = [...base]; for (let i=arr.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [arr[i], arr[j]]=[arr[j], arr[i]]; } base = arr; }
+            localStorage.setItem(cacheKey, JSON.stringify(base)); return base;
+        }
+
+        function updateProgressStats(pageDiv, chunk) {
+            let t = 0; let c = 0;
+            chunk.forEach(day => { let acts = [...getCustomTasks(day.fullDateId), ...getActivitiesForDay(day.fullDateId)]; acts.forEach(act => { if(act && !act.includes('Leave')) { t++; if(localStorage.getItem(`${DB_PREFIX}cell-${day.fullDateId}-${safeId(act)}`) === 'done') c++; } }); });
+            let p = t > 0 ? (c / t) * 100 : 0; let bar = pageDiv.querySelector('.progress-bar'); if(bar) bar.style.width = `${p}%`;
+        }
+
+        function initApp() {
+            initTheme();
+            let savedDate = localStorage.getItem(DB_PREFIX + 'engine_date');
+            if(savedDate) { let parts = savedDate.split('-'); currentYear = parseInt(parts[0]); currentMonth = parseInt(parts[1]); } 
+            else { let td = new Date(); currentYear = td.getFullYear(); currentMonth = td.getMonth(); }
+            
+            document.getElementById('sysYear').value = currentYear; document.getElementById('sysMonth').value = currentMonth;
+            renderMonth(currentYear, currentMonth, new Date().getDate());
+            setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('en-US', {hour12: false}); }, 1000);
+        }
+
+        function loadCustomDate() { currentYear = parseInt(document.getElementById('sysYear').value); currentMonth = parseInt(document.getElementById('sysMonth').value); localStorage.setItem(DB_PREFIX + 'engine_date', `${currentYear}-${currentMonth}`); closeModals(); renderMonth(currentYear, currentMonth); showToast(`Loaded ${monthNames[currentMonth]} ${currentYear}`); }
+
+        function renderMonth(year, month, targetDateNum = null, preservePage = false) {
+            let savedPage = currentPage; const wrapper = document.getElementById('pages-wrapper'); wrapper.innerHTML = ''; 
+            let daysInMonth = new Date(year, month + 1, 0).getDate(); let scheduleDates = []; 
+            for (let i=0; i<daysInMonth; i++) { let cd = new Date(year, month, i+1); scheduleDates.push({ fullDateId: `${year}-${month}-${cd.getDate()}`, displayDate: `${cd.getDate()} ${monthNames[month]}`, dateNum: cd.getDate(), dayIndex: cd.getDay(), dayStr: dayNames[cd.getDay()] }); }
+
+            let pageChunks = []; let currentChunk = [];
+            scheduleDates.forEach((dayObj, index) => { currentChunk.push(dayObj); if (dayObj.dayIndex === 0 || index === scheduleDates.length - 1) { pageChunks.push(currentChunk); currentChunk = []; } });
+            totalPages = pageChunks.length; let targetPageIndex = 0;
+
+            pageChunks.forEach((chunk, pageIndex) => {
+                if (targetDateNum && chunk.some(d => d.dateNum === targetDateNum)) targetPageIndex = pageIndex;
+                let pageDiv = document.createElement('div'); pageDiv.className = 'page-card';
+                let a4Wrapper = document.createElement('div'); a4Wrapper.className = 'a4-wrapper';
+
+                a4Wrapper.innerHTML = `
+                    <div class="page-header">
+                        <div class="header-left">
+                            <h1><svg width="24" height="24" viewBox="0 0 100 100" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius:6px; margin-right:5px;"><path d="M50 15 L85 50 L50 85 L15 50 Z" fill="#ffffff"/><circle cx="50" cy="50" r="12" fill="#ffffff"/></svg> Elite Scholar OS</h1>
+                            <div class="dynamic-greeting">${getGreeting()}</div>
+                            <p>${monthNames[month]} ${year} | Week ${pageIndex + 1}</p>
+                        </div>
+                        <div class="header-stats">
+                            <div class="streak-badge">Master your targets</div>
+                            <div class="progress-container"><div class="progress-bar"></div></div>
+                        </div>
+                    </div>
+                `;
+
+                let tableContainer = document.createElement('div'); tableContainer.className = 'table-container';
+                let table = document.createElement('table'); let thead = document.createElement('thead'); let headerRow = document.createElement('tr');
+                
+                let maxRows = 12; chunk.forEach(dayObj => { let acts = [...getCustomTasks(dayObj.fullDateId), ...getActivitiesForDay(dayObj.fullDateId)]; if (acts.length > maxRows) maxRows = acts.length; });
+                
+                chunk.forEach((dayObj) => {
+                    let th = document.createElement('th'); let config = getDayProtocolConfig(dayObj.fullDateId); let badgeHtml = '';
+                    if(config.type !== 'Normal') badgeHtml = `<span class="type-badge">${config.type}</span>`;
+                    th.innerHTML = `${dayObj.displayDate}<br><span>(${dayObj.dayStr})</span>${badgeHtml}`;
+                    let color = headerColors[dayObj.dayIndex]; th.style.backgroundColor = color; if (color === "#facc15") th.style.color = "#1f2937";
+                    th.onclick = () => openDailyModal(dayObj, color); headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow); table.appendChild(thead);
+
+                let tbody = document.createElement('tbody');
+                for (let row = 0; row < maxRows; row++) {
+                    let tr = document.createElement('tr');
+                    chunk.forEach((dayObj) => {
+                        let td = document.createElement('td'); let dailyActs = [...getCustomTasks(dayObj.fullDateId), ...getActivitiesForDay(dayObj.fullDateId)];
+                        let activityName = dailyActs[row]; 
+                        if (activityName) {
+                            td.innerHTML = activityName; let cellId = `${DB_PREFIX}cell-${dayObj.fullDateId}-${safeId(activityName)}`; td.id = cellId;
+                            if(localStorage.getItem(cellId) === 'done') td.classList.add('completed');
+
+                            let clickCount = 0; let clickTimer;
+                            td.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                if (!this.classList.contains('completed')) {
+                                    this.classList.add('completed'); localStorage.setItem(this.id, 'done'); clickCount = 0; 
+                                    if(navigator.vibrate) navigator.vibrate(50); document.getElementById('success-sound').play().catch(()=>{});
+                                } else {
+                                    clickCount++; if (clickCount === 3) { this.classList.remove('completed'); localStorage.removeItem(this.id); clickCount = 0; showToast("Task Unmarked");}
+                                    clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickCount = 0; }, 600);
+                                }
+                                updateProgressStats(pageDiv, chunk);
+                            });
+                        } else { td.classList.add('empty-cell'); }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                }
+                table.appendChild(tbody); tableContainer.appendChild(table); a4Wrapper.appendChild(tableContainer);
+                pageDiv.appendChild(a4Wrapper); wrapper.appendChild(pageDiv); setTimeout(() => updateProgressStats(pageDiv, chunk), 100);
+            });
+            currentPage = preservePage ? Math.min(savedPage, totalPages - 1) : targetPageIndex; updateSlider();
+        }
+
+        // Daily Detail Features
+        function openDailyModal(dayObj, headerColor) {
+            activeModalDayId = dayObj.fullDateId;
+            document.getElementById('daily-title').innerText = `${dayObj.displayDate} - ${dayObj.dayStr}`;
+            document.getElementById('daily-header-bg').style.background = headerColor;
+            
+            let config = getDayProtocolConfig(dayObj.fullDateId);
+            document.getElementById('dayTypeSelect').value = config.type; document.getElementById('activityModeSelect').value = config.mode; handleModeLogic();
+            document.getElementById('daily-notes').value = localStorage.getItem(`${DB_PREFIX}notes_${activeModalDayId}`) || '';
+            document.getElementById('config-panel').classList.remove('open');
+            renderModalList(dayObj.fullDateId); document.getElementById('daily-modal').classList.add('open');
+        }
+
+        function saveNotes() { localStorage.setItem(`${DB_PREFIX}notes_${activeModalDayId}`, document.getElementById('daily-notes').value); }
+        
+        function addCustomTask() {
+            let task = prompt("Enter specific target to pin (e.g., 'Semester Assignment' or 'Mock Test'):");
+            if(task && activeModalDayId) {
+                let acts = getCustomTasks(activeModalDayId); acts.push(task);
+                localStorage.setItem(`${DB_PREFIX}custom_${activeModalDayId}`, JSON.stringify(acts));
+                renderMonth(currentYear, currentMonth, null, true); renderModalList(activeModalDayId); showToast("Target Pinned! 📌");
+            }
+        }
+
+        function renderModalList(fullDateId) {
+            const customActs = getCustomTasks(fullDateId); const regularActs = getActivitiesForDay(fullDateId);
+            const activities = [...customActs, ...regularActs];
+            const tbody = document.createElement('tbody');
+            
+            let t=0; let c=0;
+
+            activities.forEach((activity, index) => {
+                if(!activity.includes('Leave')) t++;
+                let cellId = `${DB_PREFIX}cell-${fullDateId}-${safeId(activity)}`;
+                let isDone = localStorage.getItem(cellId) === 'done';
+                if(isDone && !activity.includes('Leave')) c++;
+
+                let tr = document.createElement('tr');
+                tr.style.animationDelay = `${index * 0.06}s`; 
+                if(isDone && !activity.includes('Leave')) tr.className = 'completed';
+                
+                let td = document.createElement('td'); 
+                let innerHtml = `<span>${activity}</span>`;
+                
+                // Smart Tags
+                if(index < customActs.length) innerHtml += `<span class="task-tag tag-custom">Pinned</span>`;
+                else if(activity.toLowerCase().includes('merathon') || activity.toLowerCase().includes('math') || activity.toLowerCase().includes('mock')) innerHtml += `<span class="task-tag tag-hard">Focus</span>`;
+                
+                td.innerHTML = innerHtml; tr.appendChild(td);
+                
+                if (!activity.includes('Leave')) {
+                    tr.addEventListener('click', function(e) {
+                        let mainCell = document.getElementById(cellId);
+                        if (this.classList.contains('completed')) {
+                            this.classList.remove('completed'); localStorage.removeItem(cellId);
+                            if(mainCell) mainCell.classList.remove('completed'); c--;
+                        } else {
+                            this.classList.add('completed'); localStorage.setItem(cellId, 'done'); 
+                            if(navigator.vibrate) navigator.vibrate(50); document.getElementById('success-sound').play().catch(()=>{});
+                            if(mainCell) mainCell.classList.add('completed'); c++;
+                            if(c===t) { confetti({particleCount: 150, spread: 80}); showToast("Day Conquered! Excellent work. 🎉"); }
+                        }
+                        updateModalStats(t, c); setTimeout(() => renderMonth(currentYear, currentMonth, null, true), 10);
+                    });
+                }
+                tbody.appendChild(tr);
+            });
+            document.getElementById('daily-activities').innerHTML = ''; document.getElementById('daily-activities').appendChild(tbody);
+            updateModalStats(t, c);
+        }
+
+        function updateModalStats(t, c) {
+            document.getElementById('modal-prog-text').innerText = `Tasks: ${c}/${t} Completed`;
+            let p = t>0 ? Math.round((c/t)*100) : 0;
+            document.getElementById('modal-prog-percent').innerText = `${p}%`;
+            document.getElementById('modal-prog-fill').style.width = `${p}%`;
+            document.getElementById('daily-sub-stats').innerText = `Est. Focus: ${(t*0.75).toFixed(1)} Hrs | Pending: ${t-c}`;
+        }
+
+        function toggleConfigPanel() { document.getElementById('config-panel').classList.toggle('open'); }
+        function handleModeLogic() {
+            const t = document.getElementById('dayTypeSelect').value; const mSelect = document.getElementById('activityModeSelect');
+            if (t === 'Normal' || t === 'Leave') { mSelect.value = 'Normal'; mSelect.disabled = true; mSelect.style.opacity = '0.5'; } else { mSelect.disabled = false; mSelect.style.opacity = '1'; if(mSelect.value === 'Normal') mSelect.value = 'SpecialOnly'; }
+        }
+
+        function saveDayProtocol() {
+            if (!activeModalDayId) return;
+            const newType = document.getElementById('dayTypeSelect').value; let newMode = document.getElementById('activityModeSelect').value;
+            if (newType === 'Normal' || newType === 'Leave') newMode = 'Normal';
+            localStorage.setItem(`${DB_PREFIX}protocol_${activeModalDayId}`, JSON.stringify({ type: newType, mode: newMode }));
+            localStorage.removeItem(`${DB_PREFIX}acts_v1_${activeModalDayId}_${newType}_${newMode}`); 
+            renderMonth(currentYear, currentMonth, null, true); renderModalList(activeModalDayId); toggleConfigPanel(); showToast("System Setup Updated 🔄");
+        }
+
+        function closeDailyModal() { document.getElementById('daily-modal').classList.remove('open'); document.getElementById('config-panel').classList.remove('open'); }
+        function openTools() { document.getElementById('overlay').style.display = 'block'; document.getElementById('tools-modal').style.display = 'block'; setTimeout(() => { document.getElementById('overlay').style.opacity = '1'; document.getElementById('tools-modal').style.transform = 'translate(-50%, -50%)'; }, 10); }
+        function closeModals() { document.getElementById('overlay').style.opacity = '0'; document.getElementById('tools-modal').style.transform = 'translate(-50%, -40%)'; setTimeout(() => { document.getElementById('overlay').style.display = 'none'; document.getElementById('tools-modal').style.display = 'none'; }, 300); }
+
+        let touchstartX = 0; let touchendX = 0; const sliderContainer = document.getElementById('planner-container');
+        sliderContainer.addEventListener('touchstart', e => touchstartX = e.changedTouches[0].screenX, {passive: true});
+        sliderContainer.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX; let threshold = 40; 
+            if (touchendX < touchstartX - threshold && currentPage < totalPages - 1) { currentPage++; updateSlider(); }
+            if (touchendX > touchstartX + threshold && currentPage > 0) { currentPage--; updateSlider(); }
+        }, {passive: true});
+        function updateSlider() { document.getElementById('pages-wrapper').style.transform = `translateX(-${currentPage * 100}vw)`; document.getElementById('page-indicator').innerText = `Page ${currentPage + 1} / ${totalPages}`; }
+
+        function exportData() {
+            let data = JSON.stringify(localStorage); let blob = new Blob([data], {type: "application/json"});
+            let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `elite_scholar_backup_${currentYear}.json`; a.click();
+            closeModals(); showToast("Data Backup Downloaded!");
+        }
+
+        function resetMonth() { if(confirm("Clear progress for this month?")) { Object.keys(localStorage).forEach(k => { if(k.includes(`${DB_PREFIX}cell-${currentYear}-${currentMonth}`)) localStorage.removeItem(k); }); closeModals(); renderMonth(currentYear, currentMonth); showToast("Database Cleared 🗑️");} }
+
+        /* HD PRINT ENGINE EXECUTIONS */
+        function downloadHDPrint() {
+            closeModals(); document.body.classList.add('export-mode'); showToast("Preparing HD A4 Document...");
+            setTimeout(() => { window.print(); document.body.classList.remove('export-mode'); }, 600);
+        }
+
+        function printSingleDay() {
+            document.getElementById('config-panel').classList.remove('open');
+            document.body.classList.add('export-day-mode'); showToast("Preparing Focus Sheet...");
+            setTimeout(() => { window.print(); document.body.classList.remove('export-day-mode'); }, 600);
+        }
+
+        // Install Engine
+        let deferredPrompt; const installPopup = document.getElementById('install-popup');
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (!isStandalone) { window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; setTimeout(() => installPopup.style.display = 'block', 2500); }); }
+        document.getElementById('install-btn').addEventListener('click', async () => { installPopup.style.display = 'none'; if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; } });
+        window.addEventListener('appinstalled', () => { installPopup.style.display = 'none'; });
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>

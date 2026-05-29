@@ -1,0 +1,838 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoC Account Registry</title>
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Basic Setup & Scrollbars */
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f1f5f9; margin: 0; }
+        
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        .animate-slide-up { animation: slideUp 0.3s ease-out; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        
+        /* Advanced Print Styles */
+        @media print {
+            body { background: white !important; }
+            .no-print { display: none !important; }
+            aside { display: none !important; }
+            main { padding: 0 !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; }
+            
+            /* Remove height restrictions for printing full tables */
+            .print-auto-height { height: auto !important; overflow: visible !important; }
+            
+            .print\:border-none { border: none !important; }
+            .print\:shadow-none { box-shadow: none !important; }
+            .print\:p-0 { padding: 0 !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+            /* Dynamic Orientation */
+            body.print-landscape { @page { size: landscape; margin: 1cm; } }
+            body.print-portrait { @page { size: portrait; margin: 1cm; } }
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col md:flex-row min-h-screen">
+
+    <!-- Sidebar / Navigation -->
+    <aside class="w-full md:w-64 bg-slate-900 text-white min-h-screen flex flex-col shadow-xl no-print text-sm shrink-0">
+        <div class="p-4 bg-slate-950 border-b border-slate-800 flex items-center gap-3">
+            <i data-lucide="shield" class="text-blue-400 w-7 h-7"></i>
+            <div>
+                <h1 class="font-bold text-lg tracking-wide text-white">CoC Vault</h1>
+                <p class="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">Registry System</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 p-3 space-y-1" id="nav-menu">
+            <button onclick="switchTab('home')" id="btn-home" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors bg-blue-600 text-white">
+                <i data-lucide="home" class="w-4 h-4"></i> Dashboard
+            </button>
+            <button onclick="openForm()" id="btn-form" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Account
+            </button>
+            <button onclick="switchTab('list')" id="btn-list" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
+                <i data-lucide="list" class="w-4 h-4"></i> Account List
+            </button>
+            <button onclick="switchTab('excel')" id="btn-excel" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
+                <i data-lucide="table" class="w-4 h-4"></i> Excel View
+            </button>
+            <div class="pt-2 mt-2 border-t border-slate-800">
+                <button onclick="switchTab('customPrint')" id="btn-customPrint" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
+                    <i data-lucide="check-square" class="w-4 h-4"></i> Custom Print
+                </button>
+            </div>
+        </nav>
+
+        <div class="p-4 bg-slate-950 border-t border-slate-800 space-y-2">
+            <button onclick="exportData()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 p-2 rounded text-xs font-semibold transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i> Backup Data
+            </button>
+            <label class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 p-2 rounded text-xs font-semibold transition-colors cursor-pointer">
+                <i data-lucide="upload" class="w-4 h-4"></i> Restore Data
+                <input type="file" accept=".json" onchange="importData(event)" class="hidden" />
+            </label>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 p-2 md:p-4 overflow-y-auto w-full bg-slate-100 h-screen custom-scrollbar print-auto-height">
+        <div class="max-w-7xl mx-auto pb-20">
+
+            <!-- 1. DASHBOARD TAB -->
+            <div id="tab-home" class="tab-section block animate-fade-in space-y-4">
+                <div class="flex justify-between items-center bg-white p-4 rounded border border-slate-200 shadow-sm no-print">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">System Overview</h2>
+                        <p class="text-xs text-slate-500 mt-1">Compact dashboard for quick insights.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-blue-50 p-4 rounded border border-blue-200 flex flex-col justify-center items-center">
+                        <i data-lucide="database" class="text-blue-500 mb-2 w-6 h-6"></i>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase">Total Accounts</h3>
+                        <p class="text-2xl font-black text-blue-700" id="stat-total">0</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded border border-green-200 flex flex-col justify-center items-center">
+                        <i data-lucide="shield" class="text-green-500 mb-2 w-6 h-6"></i>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase">Secured Vaults</h3>
+                        <p class="text-2xl font-black text-green-700" id="stat-secured">0</p>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded border border-purple-200 flex flex-col justify-center items-center">
+                        <i data-lucide="swords" class="text-purple-500 mb-2 w-6 h-6"></i>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase">Clans Joined</h3>
+                        <p class="text-2xl font-black text-purple-700" id="stat-clans">0</p>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded border border-orange-200 flex flex-col justify-center items-center">
+                        <i data-lucide="mail" class="text-orange-500 mb-2 w-6 h-6"></i>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase">Emails Linked</h3>
+                        <p class="text-2xl font-black text-orange-700" id="stat-emails">0</p>
+                    </div>
+                </div>
+
+                <div id="empty-state" class="bg-slate-100 border-2 border-dashed border-slate-300 rounded p-8 text-center mt-8">
+                    <i data-lucide="database" class="mx-auto text-slate-400 mb-2 w-8 h-8"></i>
+                    <p class="text-slate-600 font-semibold text-sm">Database is empty.</p>
+                    <p class="text-slate-500 text-xs mt-1 mb-4">Add your first account to see details here.</p>
+                    <button onclick="openForm()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 inline-flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Account
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. FORM TAB -->
+            <div id="tab-form" class="tab-section hidden animate-slide-up">
+                <div class="bg-white rounded border border-slate-200 shadow-sm text-sm">
+                    <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center no-print">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2" id="form-title">
+                            <i data-lucide="file-text" class="text-blue-600 w-5 h-5"></i> Register New Account
+                        </h2>
+                        <span class="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded font-semibold">All fields optional</span>
+                    </div>
+
+                    <form id="account-form" onsubmit="saveAccount(event)" class="p-4 space-y-4">
+                        <input type="hidden" id="f_id">
+                        
+                        <!-- Identity Profile Box -->
+                        <div class="border border-blue-200 rounded overflow-hidden">
+                            <div class="bg-blue-100 px-3 py-1.5 font-bold text-blue-900 text-xs uppercase tracking-wider border-b border-blue-200 flex items-center gap-2">
+                                <i data-lucide="user" class="w-3.5 h-3.5"></i> Identity & Profile
+                            </div>
+                            <div class="p-3 bg-white grid grid-cols-2 md:grid-cols-5 gap-3">
+                                <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Player Name</label><input type="text" id="f_playerName" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 font-semibold" placeholder="Account Name"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tag</label><input type="text" id="f_playerTag" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 font-mono" placeholder="#TAG"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Town Hall</label><input type="number" id="f_townHall" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 text-center" placeholder="TH Lv"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Exp Level</label><input type="number" id="f_expLevel" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 text-center" placeholder="Lv"></div>
+                            </div>
+                        </div>
+
+                        <!-- Clan Details Box -->
+                        <div class="border border-purple-200 rounded overflow-hidden">
+                            <div class="bg-purple-100 px-3 py-1.5 font-bold text-purple-900 text-xs uppercase tracking-wider border-b border-purple-200 flex items-center gap-2">
+                                <i data-lucide="swords" class="w-3.5 h-3.5"></i> Clan Details
+                            </div>
+                            <div class="p-3 bg-white grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div class="col-span-2 md:col-span-1"><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Clan Name</label><input type="text" id="f_clanName" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500" placeholder="Clan Name"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Clan Tag</label><input type="text" id="f_clanTag" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500 font-mono" placeholder="#TAG"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Role</label><input type="text" id="f_clanRole" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500" placeholder="e.g. Leader"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level</label><input type="number" id="f_clanLevel" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500 text-center" placeholder="Lv"></div>
+                            </div>
+                        </div>
+
+                        <!-- Heroes & Base Box -->
+                        <div class="border border-emerald-200 rounded overflow-hidden">
+                            <div class="bg-emerald-100 px-3 py-1.5 font-bold text-emerald-900 text-xs uppercase tracking-wider border-b border-emerald-200 flex items-center gap-2">
+                                <i data-lucide="layers" class="w-3.5 h-3.5"></i> Progression & Heroes
+                            </div>
+                            <div class="p-3 bg-white grid grid-cols-2 md:grid-cols-6 gap-3">
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Barb. King</label><input type="number" id="f_heroKing" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center" placeholder="Lv"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Archer Qn.</label><input type="number" id="f_heroQueen" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center" placeholder="Lv"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Warden</label><input type="number" id="f_heroWarden" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center" placeholder="Lv"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Champion</label><input type="number" id="f_heroChampion" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center" placeholder="Lv"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">B. Hall</label><input type="number" id="f_builderHall" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center" placeholder="BH Lv"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Gems</label><input type="number" id="f_gems" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center text-emerald-700 font-bold" placeholder="0"></div>
+                            </div>
+                        </div>
+
+                        <!-- Email Matrix -->
+                        <div class="border border-orange-200 rounded overflow-hidden">
+                            <div class="bg-orange-100 px-3 py-1.5 font-bold text-orange-900 text-xs uppercase tracking-wider border-b border-orange-200 flex items-center gap-2">
+                                <i data-lucide="mail" class="w-3.5 h-3.5"></i> Email Directory
+                            </div>
+                            <table class="w-full text-left text-sm bg-white">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-[10px] uppercase text-slate-500">
+                                    <tr><th class="p-2 font-bold w-1/4 border-r border-slate-200">Type</th><th class="p-2 font-bold w-1/2 border-r border-slate-200">Address</th><th class="p-2 font-bold w-1/4">Date Logged</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-slate-200"><td class="p-2 border-r border-slate-200 bg-slate-50 font-semibold text-slate-600 text-xs">Origin/Old</td><td class="p-1 border-r border-slate-200"><input type="text" id="f_oldEmail" class="w-full p-1 outline-none text-sm" placeholder="Optional"></td><td class="p-1 bg-slate-50 text-center text-slate-400 text-xs">-</td></tr>
+                                    <tr class="border-b border-slate-200 bg-orange-50/30"><td class="p-2 border-r border-slate-200 font-bold text-orange-800 text-xs">Current Active</td><td class="p-1 border-r border-slate-200"><input type="email" id="f_currentEmail" class="w-full p-1 outline-none text-sm font-semibold bg-transparent" placeholder="Current Email"></td><td class="p-1"><input type="date" id="f_currentEmailDate" class="w-full p-1 outline-none text-sm bg-transparent"></td></tr>
+                                    <tr class="border-b border-slate-200"><td class="p-2 border-r border-slate-200 bg-slate-50 font-semibold text-slate-600 text-xs">New/Transfer 1</td><td class="p-1 border-r border-slate-200"><input type="email" id="f_newEmail1" class="w-full p-1 outline-none text-sm" placeholder="Optional"></td><td class="p-1"><input type="date" id="f_newEmail1Date" class="w-full p-1 outline-none text-sm"></td></tr>
+                                    <tr><td class="p-2 border-r border-slate-200 bg-slate-50 font-semibold text-slate-600 text-xs">New/Transfer 2</td><td class="p-1 border-r border-slate-200"><input type="email" id="f_newEmail2" class="w-full p-1 outline-none text-sm" placeholder="Optional"></td><td class="p-1"><input type="date" id="f_newEmail2Date" class="w-full p-1 outline-none text-sm"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Security Box -->
+                        <div class="border border-red-200 rounded overflow-hidden">
+                            <div class="bg-red-100 px-3 py-1.5 font-bold text-red-900 text-xs uppercase tracking-wider border-b border-red-200 flex justify-between items-center">
+                                <div class="flex items-center gap-2"><i data-lucide="shield" class="w-3.5 h-3.5"></i> Security & Protection</div>
+                                <div class="flex items-center gap-2 text-[10px]">SCID Status: <select id="f_supercellId" class="p-0.5 rounded outline-none border border-red-300 font-bold bg-white"><option value="">Select</option><option value="Connected">Connected</option><option value="Pending">Pending</option></select></div>
+                            </div>
+                            <div class="p-3 bg-white grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="md:col-span-2">
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Protection Codes (2FA)</label>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <input type="text" id="f_code0" class="border border-slate-300 p-1.5 rounded text-center font-mono text-sm tracking-widest outline-none focus:border-red-500 uppercase bg-slate-50" placeholder="XXXX">
+                                        <input type="text" id="f_code1" class="border border-slate-300 p-1.5 rounded text-center font-mono text-sm tracking-widest outline-none focus:border-red-500 uppercase bg-slate-50" placeholder="XXXX">
+                                        <input type="text" id="f_code2" class="border border-slate-300 p-1.5 rounded text-center font-mono text-sm tracking-widest outline-none focus:border-red-500 uppercase bg-slate-50" placeholder="XXXX">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Recovery Note</label>
+                                    <textarea id="f_recoveryPhrase" class="w-full border border-slate-300 p-1.5 rounded outline-none focus:border-red-500 text-xs h-10 resize-none" placeholder="Notes..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex justify-end gap-3 pt-2 no-print">
+                            <button type="button" onclick="switchTab('list')" class="px-4 py-1.5 bg-slate-100 border border-slate-300 text-slate-700 rounded font-semibold hover:bg-slate-200 text-sm">Cancel</button>
+                            <button type="submit" class="px-4 py-1.5 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 flex items-center gap-2 text-sm shadow-sm">
+                                <i data-lucide="save" class="w-4 h-4"></i> Save Data
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. LIST TAB -->
+            <div id="tab-list" class="tab-section hidden animate-slide-up">
+                <div class="bg-white rounded border border-slate-200 shadow-sm overflow-hidden text-sm">
+                    <div class="bg-slate-50 p-3 border-b border-slate-200 flex justify-between items-center gap-4 no-print">
+                        <div class="relative flex-1 max-w-sm">
+                            <i data-lucide="search" class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                            <input type="text" id="search-input" onkeyup="renderList()" placeholder="Search names, tags..." class="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded text-sm outline-none focus:border-blue-500">
+                        </div>
+                        <button onclick="handlePrint('portrait')" class="flex items-center gap-1 bg-white border border-slate-300 px-3 py-1.5 rounded font-bold text-slate-700 hover:bg-slate-100 text-xs">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print List
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-slate-800 text-white text-[10px] uppercase tracking-wider">
+                                    <th class="p-2 text-center w-10">#</th>
+                                    <th class="p-2 text-left">Account</th>
+                                    <th class="p-2 text-center">TH</th>
+                                    <th class="p-2 text-left">Clan</th>
+                                    <th class="p-2 text-left">Email</th>
+                                    <th class="p-2 text-center no-print">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-body" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. EXCEL VIEW TAB -->
+            <div id="tab-excel" class="tab-section hidden animate-slide-up">
+                <div class="bg-white border border-slate-300 rounded shadow-sm flex flex-col h-[85vh] print-auto-height">
+                    <div class="bg-slate-100 p-2 border-b border-slate-300 flex justify-between items-center no-print shrink-0">
+                        <h2 class="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="table" class="text-emerald-600 w-4 h-4"></i> Master Data Register
+                        </h2>
+                        <button onclick="handlePrint('landscape')" class="flex items-center gap-1 bg-white border border-slate-300 px-2 py-1 rounded text-xs font-bold text-slate-700 hover:bg-slate-200">
+                            <i data-lucide="printer" class="w-3 h-3"></i> Print Landscape
+                        </button>
+                    </div>
+                    <div class="overflow-auto flex-1 custom-scrollbar">
+                        <table class="border-collapse min-w-max text-[10px] sm:text-xs w-full">
+                            <thead class="sticky top-0 z-10 shadow-sm" id="excel-head">
+                                <!-- Populated dynamically -->
+                            </thead>
+                            <tbody class="bg-white" id="excel-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. CUSTOM PRINT TAB -->
+            <div id="tab-customPrint" class="tab-section hidden animate-slide-up">
+                <div class="bg-white border border-slate-200 rounded shadow-sm flex flex-col h-[85vh] print-auto-height">
+                    <div class="p-4 border-b border-slate-300 bg-slate-50 no-print shrink-0">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <i data-lucide="check-square" class="text-indigo-600 w-5 h-5"></i> Report Builder
+                            </h2>
+                            <div class="flex gap-2">
+                                <button onclick="setAllCustomColumns(true)" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 text-xs font-bold rounded hover:bg-slate-100">Select All</button>
+                                <button onclick="setAllCustomColumns(false)" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 text-xs font-bold rounded hover:bg-slate-100">Clear All</button>
+                                <button onclick="handlePrint('landscape')" class="px-4 py-1 bg-indigo-600 text-white text-sm font-bold rounded hover:bg-indigo-700 shadow-sm flex items-center gap-2">
+                                    <i data-lucide="printer" class="w-4 h-4"></i> Print Custom Report
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-3 font-semibold uppercase tracking-wider">Select columns to include:</p>
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="custom-checkboxes">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                    <div class="overflow-auto flex-1 p-4 bg-white custom-scrollbar">
+                        <div class="mb-4 text-center hidden print:block">
+                            <h1 class="text-xl font-bold text-slate-900 uppercase">Custom Registry Report</h1>
+                            <p class="text-xs text-slate-500" id="print-date"></p>
+                        </div>
+                        <table class="w-full border-collapse text-[10px] sm:text-xs">
+                            <thead id="custom-thead"></thead>
+                            <tbody id="custom-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. DETAIL VIEW TAB -->
+            <div id="tab-detail" class="tab-section hidden animate-slide-up">
+                <div class="bg-white rounded border border-slate-300 shadow-sm text-sm print:border-none print:shadow-none">
+                    <div class="bg-slate-100 p-3 border-b border-slate-300 flex justify-between items-center no-print">
+                        <button onclick="switchTab('list')" class="text-slate-600 hover:text-blue-600 font-bold text-xs">← Back</button>
+                        <div class="flex gap-2">
+                            <button onclick="handlePrint('portrait')" class="bg-white border border-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-bold hover:bg-slate-200">Print</button>
+                            <button onclick="editCurrentAccount()" class="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1 rounded text-xs font-bold hover:bg-blue-100">Edit</button>
+                            <button onclick="deleteCurrentAccount()" class="bg-red-50 border border-red-200 text-red-700 px-3 py-1 rounded text-xs font-bold hover:bg-red-100">Delete</button>
+                        </div>
+                    </div>
+                    <div class="p-6 print:p-0" id="detail-content">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- JavaScript For App Logic -->
+    <script>
+        // Data State variables (Hindi logic comment check)
+        // Data aur state store karne ke liye variables
+        let accounts = [];
+        let currentAccountId = null;
+        
+        // Custom Print Column Configuration
+        const defaultPrintColumns = {
+            playerName: { label: 'Player Name', checked: true, group: 'Identity' },
+            playerTag: { label: 'Tag', checked: true, group: 'Identity' },
+            townHall: { label: 'TH', checked: true, group: 'Identity' },
+            expLevel: { label: 'Exp', checked: false, group: 'Identity' },
+            clanName: { label: 'Clan Name', checked: true, group: 'Clan' },
+            clanTag: { label: 'Clan Tag', checked: false, group: 'Clan' },
+            clanRole: { label: 'Role', checked: false, group: 'Clan' },
+            clanLevel: { label: 'Level', checked: false, group: 'Clan' },
+            oldEmail: { label: 'Old Email', checked: false, group: 'Email' },
+            currentEmail: { label: 'Current Email', checked: true, group: 'Email' },
+            currentEmailDate: { label: 'Current Date', checked: false, group: 'Email' },
+            newEmail1: { label: 'New Email 1', checked: false, group: 'Email' },
+            newEmail2: { label: 'New Email 2', checked: false, group: 'Email' },
+            king: { label: 'King', checked: false, group: 'Heroes' },
+            queen: { label: 'Queen', checked: false, group: 'Heroes' },
+            warden: { label: 'Warden', checked: false, group: 'Heroes' },
+            champion: { label: 'Champion', checked: false, group: 'Heroes' },
+            builderHall: { label: 'BH', checked: false, group: 'Heroes' },
+            gems: { label: 'Gems', checked: false, group: 'Heroes' },
+            protectionCodes: { label: 'Protection Codes', checked: false, group: 'Security' },
+            supercellId: { label: 'SCID', checked: false, group: 'Security' }
+        };
+        let printColumns = JSON.parse(JSON.stringify(defaultPrintColumns));
+
+        // Jab page load ho jaye tab ye run karega
+        document.addEventListener("DOMContentLoaded", () => {
+            // Icons initialize karna
+            lucide.createIcons();
+            document.getElementById('print-date').innerText = "Date Generated: " + new Date().toLocaleDateString();
+            
+            // Local storage se data fetch karna
+            const saved = localStorage.getItem('coc_accounts');
+            if(saved) {
+                try { accounts = JSON.parse(saved); } catch(e){}
+            }
+
+            renderDashboard();
+            buildCustomPrintUI();
+            switchTab('home'); // Default tab set karna
+        });
+
+        // LocalStorage me save karna
+        function saveToLocal() {
+            localStorage.setItem('coc_accounts', JSON.stringify(accounts));
+            renderDashboard();
+        }
+
+        // Yeh function tab switch karega bina kisi CSS takrav ke
+        function switchTab(tabId) {
+            // Saare sections ko hide (chupana) kar do
+            document.querySelectorAll('.tab-section').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('block');
+            });
+
+            // Nav buttons ke colors reset karna
+            const navButtons = document.querySelectorAll('#nav-menu button');
+            navButtons.forEach(btn => {
+                btn.className = "w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300";
+            });
+
+            // Target tab ko show karna
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if(activeTab) {
+                activeTab.classList.remove('hidden');
+                activeTab.classList.add('block');
+            }
+            
+            // Sidebar menu highlight karna
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if(activeBtn) activeBtn.className = "w-full flex items-center gap-3 p-2.5 rounded transition-colors bg-blue-600 text-white";
+
+            // Zaroorat ke hisaab se pages ko render karna
+            if(tabId === 'home') renderDashboard();
+            if(tabId === 'list') renderList();
+            if(tabId === 'excel') renderExcel();
+            if(tabId === 'customPrint') renderCustomPrintTable();
+            
+            window.scrollTo(0, 0);
+        }
+
+        // Print function landscape/portrait settings ke sath
+        function handlePrint(orientation) {
+            document.body.classList.remove('print-landscape', 'print-portrait');
+            document.body.classList.add(`print-${orientation}`);
+            window.print();
+        }
+
+        // Clipboard me copy karna
+        function copyText(text) {
+            if(!text) return;
+            const tempInput = document.createElement('input');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            alert("Copied to clipboard: " + text); 
+        }
+
+        // Form kholne ka aur clear karne ka logic
+        function openForm(acc = null) {
+            document.getElementById('account-form').reset();
+            document.getElementById('f_id').value = '';
+            
+            if (acc) {
+                document.getElementById('form-title').innerHTML = `<i data-lucide="file-text" class="text-blue-600 w-5 h-5"></i> Edit Account`;
+                document.getElementById('f_id').value = acc.id;
+                document.getElementById('f_playerName').value = acc.playerName || '';
+                document.getElementById('f_playerTag').value = acc.playerTag || '';
+                document.getElementById('f_townHall').value = acc.townHall || '';
+                document.getElementById('f_expLevel').value = acc.expLevel || '';
+                document.getElementById('f_clanName').value = acc.clanName || '';
+                document.getElementById('f_clanTag').value = acc.clanTag || '';
+                document.getElementById('f_clanRole').value = acc.clanRole || '';
+                document.getElementById('f_clanLevel').value = acc.clanLevel || '';
+                document.getElementById('f_oldEmail').value = acc.oldEmail || '';
+                document.getElementById('f_currentEmail').value = acc.currentEmail || '';
+                document.getElementById('f_currentEmailDate').value = acc.currentEmailDate || '';
+                document.getElementById('f_newEmail1').value = acc.newEmail1 || '';
+                document.getElementById('f_newEmail1Date').value = acc.newEmail1Date || '';
+                document.getElementById('f_newEmail2').value = acc.newEmail2 || '';
+                document.getElementById('f_newEmail2Date').value = acc.newEmail2Date || '';
+                
+                document.getElementById('f_heroKing').value = acc.heroes?.king || '';
+                document.getElementById('f_heroQueen').value = acc.heroes?.queen || '';
+                document.getElementById('f_heroWarden').value = acc.heroes?.warden || '';
+                document.getElementById('f_heroChampion').value = acc.heroes?.champion || '';
+                document.getElementById('f_builderHall').value = acc.builderHall || '';
+                document.getElementById('f_gems').value = acc.gems || '';
+                
+                document.getElementById('f_supercellId').value = acc.supercellId || '';
+                document.getElementById('f_code0').value = acc.protectionCodes?.[0] || '';
+                document.getElementById('f_code1').value = acc.protectionCodes?.[1] || '';
+                document.getElementById('f_code2').value = acc.protectionCodes?.[2] || '';
+                document.getElementById('f_recoveryPhrase').value = acc.recoveryPhrase || '';
+            } else {
+                document.getElementById('form-title').innerHTML = `<i data-lucide="file-text" class="text-blue-600 w-5 h-5"></i> Register New Account`;
+            }
+            switchTab('form');
+            lucide.createIcons();
+        }
+
+        // Naya account save karna
+        function saveAccount(e) {
+            e.preventDefault();
+            const id = document.getElementById('f_id').value || Date.now().toString();
+            let name = document.getElementById('f_playerName').value;
+            if(!name) name = "Unnamed Account";
+
+            const accountData = {
+                id: id,
+                lastUpdated: new Date().toISOString().split('T')[0],
+                playerName: name,
+                playerTag: document.getElementById('f_playerTag').value,
+                townHall: document.getElementById('f_townHall').value,
+                expLevel: document.getElementById('f_expLevel').value,
+                clanName: document.getElementById('f_clanName').value,
+                clanTag: document.getElementById('f_clanTag').value,
+                clanRole: document.getElementById('f_clanRole').value,
+                clanLevel: document.getElementById('f_clanLevel').value,
+                oldEmail: document.getElementById('f_oldEmail').value,
+                currentEmail: document.getElementById('f_currentEmail').value,
+                currentEmailDate: document.getElementById('f_currentEmailDate').value,
+                newEmail1: document.getElementById('f_newEmail1').value,
+                newEmail1Date: document.getElementById('f_newEmail1Date').value,
+                newEmail2: document.getElementById('f_newEmail2').value,
+                newEmail2Date: document.getElementById('f_newEmail2Date').value,
+                heroes: {
+                    king: document.getElementById('f_heroKing').value,
+                    queen: document.getElementById('f_heroQueen').value,
+                    warden: document.getElementById('f_heroWarden').value,
+                    champion: document.getElementById('f_heroChampion').value
+                },
+                builderHall: document.getElementById('f_builderHall').value,
+                gems: document.getElementById('f_gems').value,
+                supercellId: document.getElementById('f_supercellId').value,
+                protectionCodes: [
+                    document.getElementById('f_code0').value,
+                    document.getElementById('f_code1').value,
+                    document.getElementById('f_code2').value
+                ],
+                recoveryPhrase: document.getElementById('f_recoveryPhrase').value
+            };
+
+            const existingIndex = accounts.findIndex(a => a.id === id);
+            if (existingIndex >= 0) accounts[existingIndex] = accountData;
+            else accounts.push(accountData);
+
+            saveToLocal();
+            switchTab('list');
+        }
+
+        // --- Render Functions (UI Update karna) ---
+        function renderDashboard() {
+            document.getElementById('stat-total').innerText = accounts.length;
+            document.getElementById('stat-secured').innerText = accounts.filter(a => a.protectionCodes && a.protectionCodes.some(c=>c.trim() !== '')).length;
+            const uniqueClans = new Set(accounts.map(a => a.clanName).filter(n => n && n.trim() !== ''));
+            document.getElementById('stat-clans').innerText = uniqueClans.size;
+            document.getElementById('stat-emails').innerText = accounts.filter(a => a.currentEmail && a.currentEmail.trim() !== '').length;
+
+            if(accounts.length > 0) document.getElementById('empty-state').style.display = 'none';
+            else document.getElementById('empty-state').style.display = 'block';
+        }
+
+        function renderList() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filtered = accounts.filter(acc => 
+                (acc.playerName || '').toLowerCase().includes(query) ||
+                (acc.playerTag || '').toLowerCase().includes(query) ||
+                (acc.clanName || '').toLowerCase().includes(query)
+            );
+
+            const tbody = document.getElementById('list-body');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500">No data found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((acc, index) => `
+                <tr class="hover:bg-blue-50 transition-colors bg-white">
+                    <td class="p-2 text-center font-bold text-slate-400 text-xs">${index + 1}</td>
+                    <td class="p-2">
+                        <div class="font-bold text-slate-900">${acc.playerName || '-'}</div>
+                        <div class="text-[10px] font-mono text-slate-500 flex items-center gap-1">
+                            ${acc.playerTag || '-'}
+                            ${acc.playerTag ? `<button onclick="copyText('${acc.playerTag}')" class="hover:text-blue-600 no-print" title="Copy Tag"><i data-lucide="copy" class="w-3 h-3"></i></button>` : ''}
+                        </div>
+                    </td>
+                    <td class="p-2 text-center font-bold text-blue-700">${acc.townHall || '-'}</td>
+                    <td class="p-2"><div class="font-semibold text-slate-800 text-xs">${acc.clanName || '-'}</div><div class="text-[10px] text-slate-500">${acc.clanRole || ''}</div></td>
+                    <td class="p-2 text-xs text-slate-600 font-medium truncate max-w-[150px]" title="${acc.currentEmail}">${acc.currentEmail || '-'}</td>
+                    <td class="p-2 text-center no-print">
+                        <button onclick="viewDetail('${acc.id}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2.5 py-1 rounded text-xs font-bold transition-colors">View</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // Icon reload karna DOM change hone ke baad
+            lucide.createIcons();
+        }
+
+        function renderExcel() {
+            const thead = document.getElementById('excel-head');
+            thead.innerHTML = `
+                <tr class="bg-slate-800 text-white font-bold uppercase tracking-widest text-[9px] text-center border-b border-slate-600">
+                    <th class="p-1 border-r border-slate-600 bg-slate-900">#</th>
+                    <th class="p-1 border-r border-slate-600 bg-blue-900" colspan="4">Core Identity</th>
+                    <th class="p-1 border-r border-slate-600 bg-purple-900" colspan="4">Clan Info</th>
+                    <th class="p-1 border-r border-slate-600 bg-orange-900" colspan="5">Email Directory</th>
+                    <th class="p-1 border-r border-slate-600 bg-emerald-900" colspan="6">Base & Heroes</th>
+                    <th class="p-1 bg-red-900" colspan="4">Security</th>
+                </tr>
+                <tr class="bg-slate-100 text-slate-700 font-bold border-b-2 border-slate-400 whitespace-nowrap">
+                    <th class="p-1.5 border-r border-slate-300 bg-slate-200">ID</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-blue-50">Name</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-blue-50">Tag</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-blue-50">TH</th>
+                    <th class="p-1.5 border-r border-slate-400 bg-blue-50">Exp</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-purple-50">Clan Name</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-purple-50">Clan Tag</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-purple-50">Role</th>
+                    <th class="p-1.5 border-r border-slate-400 bg-purple-50">Level</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-orange-50">Old Email</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-orange-50 text-orange-700">Curr Email</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-orange-50">Curr Date</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-orange-50">New Email 1</th>
+                    <th class="p-1.5 border-r border-slate-400 bg-orange-50">New 1 Date</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-emerald-50">BK</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-emerald-50">AQ</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-emerald-50">GW</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-emerald-50">RC</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-emerald-50">BH</th>
+                    <th class="p-1.5 border-r border-slate-400 bg-emerald-50">Gems</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-red-50">Code 1</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-red-50">Code 2</th>
+                    <th class="p-1.5 border-r border-slate-300 bg-red-50">Code 3</th>
+                    <th class="p-1.5 bg-red-50">SCID</th>
+                </tr>
+            `;
+
+            const tbody = document.getElementById('excel-body');
+            if (accounts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="24" class="p-4 text-center text-slate-500 font-semibold border-b">No data available.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = accounts.map((acc, index) => `
+                <tr class="border-b border-slate-200 hover:bg-slate-100 whitespace-nowrap">
+                    <td class="p-1.5 border-r border-slate-300 text-center font-bold text-slate-500 bg-slate-50">${index + 1}</td>
+                    <td class="p-1.5 border-r border-slate-300 font-bold text-blue-900">${acc.playerName || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 font-mono text-slate-600">${acc.playerTag || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-center font-bold">${acc.townHall || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-400 text-center">${acc.expLevel || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-purple-900 font-semibold">${acc.clanName || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 font-mono text-slate-500">${acc.clanTag || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-slate-600">${acc.clanRole || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-400 text-center">${acc.clanLevel || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-slate-500">${acc.oldEmail || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 font-bold text-orange-700">${acc.currentEmail || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-slate-500">${acc.currentEmailDate || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-slate-500">${acc.newEmail1 || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-400 text-slate-500">${acc.newEmail1Date || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.king || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.queen || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.warden || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.champion || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-center">${acc.builderHall || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-400 text-center font-bold text-emerald-600">${acc.gems || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-center font-mono font-bold text-red-800">${acc.protectionCodes?.[0] || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-center font-mono font-bold text-red-800">${acc.protectionCodes?.[1] || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-center font-mono font-bold text-red-800">${acc.protectionCodes?.[2] || '-'}</td>
+                    <td class="p-1.5 text-center font-bold text-slate-600">${acc.supercellId || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // --- Custom Print Logic ---
+        function buildCustomPrintUI() {
+            const container = document.getElementById('custom-checkboxes');
+            const groups = { Identity: 'blue', Clan: 'purple', Email: 'orange', Heroes: 'emerald', Security: 'red' };
+            
+            let html = '';
+            for (const [groupName, color] of Object.entries(groups)) {
+                const groupKeys = Object.keys(printColumns).filter(k => printColumns[k].group === groupName);
+                if (groupKeys.length === 0) continue;
+
+                html += `
+                    <div class="space-y-1 bg-white p-2 border border-slate-200 rounded">
+                        <div class="text-[10px] font-bold text-${color}-600 mb-2 uppercase">${groupName}</div>
+                        ${groupKeys.map(key => `
+                            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
+                                <input type="checkbox" onchange="toggleCustomCol('${key}')" ${printColumns[key].checked ? 'checked' : ''} class="accent-indigo-600" /> 
+                                ${printColumns[key].label}
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function toggleCustomCol(key) {
+            printColumns[key].checked = !printColumns[key].checked;
+            renderCustomPrintTable();
+        }
+
+        function setAllCustomColumns(val) {
+            Object.keys(printColumns).forEach(k => printColumns[k].checked = val);
+            buildCustomPrintUI();
+            renderCustomPrintTable();
+        }
+
+        function renderCustomPrintTable() {
+            const thead = document.getElementById('custom-thead');
+            const tbody = document.getElementById('custom-tbody');
+            
+            let headHTML = `<tr class="bg-slate-800 text-white font-bold uppercase tracking-wider text-left">
+                <th class="p-2 border border-slate-700 text-center">#</th>`;
+            
+            Object.keys(printColumns).forEach(key => {
+                if(printColumns[key].checked) {
+                    headHTML += `<th class="p-2 border border-slate-700">${printColumns[key].label}</th>`;
+                }
+            });
+            headHTML += `</tr>`;
+            thead.innerHTML = headHTML;
+
+            if (accounts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="30" class="p-4 text-center text-slate-500 font-semibold border-b border-slate-300">No data available to print.</td></tr>`;
+                return;
+            }
+
+            let bodyHTML = '';
+            accounts.forEach((acc, index) => {
+                bodyHTML += `<tr class="border-b border-slate-300 hover:bg-slate-50 whitespace-nowrap">
+                    <td class="p-2 border border-slate-300 text-center font-bold text-slate-600 bg-slate-50">${index + 1}</td>`;
+                
+                Object.keys(printColumns).forEach(key => {
+                    if(!printColumns[key].checked) return;
+                    
+                    let val = '-';
+                    if(key === 'king' || key === 'queen' || key === 'warden' || key === 'champion') val = acc.heroes?.[key] || '-';
+                    else if(key === 'protectionCodes') val = acc.protectionCodes?.filter(c=>c).join(', ') || '-';
+                    else val = acc[key] || '-';
+
+                    let classes = "p-2 border border-slate-300 ";
+                    if(key === 'playerName') classes += "font-bold text-slate-800";
+                    else if(key === 'playerTag' || key === 'clanTag' || key === 'protectionCodes') classes += "font-mono text-xs";
+                    else if(key === 'townHall' || key === 'expLevel' || key === 'clanLevel' || key === 'gems' || key === 'builderHall') classes += "text-center";
+
+                    bodyHTML += `<td class="${classes}">${val}</td>`;
+                });
+                bodyHTML += `</tr>`;
+            });
+            tbody.innerHTML = bodyHTML;
+        }
+
+        // --- Detail View Logic ---
+        function viewDetail(id) {
+            currentAccountId = id;
+            const acc = accounts.find(a => a.id === id);
+            if(!acc) return;
+
+            const container = document.getElementById('detail-content');
+            container.innerHTML = `
+                <div class="flex justify-between items-end border-b-2 border-slate-800 pb-2 mb-4">
+                    <div><h1 class="text-2xl font-black text-slate-900 uppercase">${acc.playerName || 'Unnamed'}</h1><p class="text-xs font-mono font-bold text-slate-600">${acc.playerTag || 'No Tag'}</p></div>
+                    <div class="text-right text-xs"><div class="font-bold text-slate-400 uppercase">TH Level</div><div class="font-black text-lg text-blue-800">${acc.townHall || '-'}</div></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <table class="w-full text-xs border-collapse border border-slate-400"><tbody><tr><th class="bg-slate-100 border border-slate-400 p-1.5 w-1/3 text-left">Exp Level</th><td class="border border-slate-400 p-1.5 font-bold">${acc.expLevel || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Builder Hall</th><td class="border border-slate-400 p-1.5 font-bold">${acc.builderHall || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Gems Vault</th><td class="border border-slate-400 p-1.5 font-bold text-emerald-700">${acc.gems || '-'}</td></tr></tbody></table>
+                    <table class="w-full text-xs border-collapse border border-slate-400"><tbody><tr><th class="bg-slate-100 border border-slate-400 p-1.5 w-1/3 text-left">Clan Name</th><td class="border border-slate-400 p-1.5 font-bold text-purple-900">${acc.clanName || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Clan Tag</th><td class="border border-slate-400 p-1.5 font-mono">${acc.clanTag || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Role / Lvl</th><td class="border border-slate-400 p-1.5">${acc.clanRole || '-'} / ${acc.clanLevel || '-'}</td></tr></tbody></table>
+                </div>
+                <div class="mb-4 border border-slate-400">
+                    <div class="bg-slate-800 text-white text-[10px] font-bold uppercase p-1.5 text-center">Registered Emails</div>
+                    <table class="w-full text-xs border-collapse text-center"><thead class="bg-slate-100 text-[10px] uppercase text-slate-600"><tr><th class="border border-slate-400 p-1 w-1/4">Old Email</th><th class="border border-slate-400 p-1 w-1/4 text-blue-700">Current Active</th><th class="border border-slate-400 p-1 w-1/4">New / Trf 1</th><th class="border border-slate-400 p-1 w-1/4">New / Trf 2</th></tr></thead><tbody><tr><td class="border border-slate-400 p-1.5 truncate max-w-[100px]">${acc.oldEmail || '-'}</td><td class="border border-slate-400 p-1.5 font-bold text-blue-800 truncate max-w-[100px]">${acc.currentEmail || '-'} <br/><span class="text-[9px] text-slate-500 font-normal">${acc.currentEmailDate || ''}</span></td><td class="border border-slate-400 p-1.5 truncate max-w-[100px]">${acc.newEmail1 || '-'} <br/><span class="text-[9px] text-slate-500 font-normal">${acc.newEmail1Date || ''}</span></td><td class="border border-slate-400 p-1.5 truncate max-w-[100px]">${acc.newEmail2 || '-'} <br/><span class="text-[9px] text-slate-500 font-normal">${acc.newEmail2Date || ''}</span></td></tr></tbody></table>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="border border-slate-400"><div class="bg-slate-800 text-white text-[10px] font-bold uppercase p-1.5 text-center">Hero Levels</div><div class="flex justify-around p-2 text-center bg-slate-50 text-xs"><div><div class="font-bold text-slate-500 text-[10px]">KING</div><div class="font-black text-sm">${acc.heroes?.king || '-'}</div></div><div><div class="font-bold text-slate-500 text-[10px]">QUEEN</div><div class="font-black text-sm">${acc.heroes?.queen || '-'}</div></div><div><div class="font-bold text-slate-500 text-[10px]">WARDEN</div><div class="font-black text-sm">${acc.heroes?.warden || '-'}</div></div><div><div class="font-bold text-slate-500 text-[10px]">CHAMP</div><div class="font-black text-sm">${acc.heroes?.champion || '-'}</div></div></div></div>
+                    <div class="border border-red-800"><div class="bg-red-900 text-white text-[10px] font-bold uppercase p-1.5 text-center flex justify-between px-2"><span>Security Codes</span><span>SCID: ${acc.supercellId || '-'}</span></div><div class="flex justify-around p-2 bg-red-50 text-xs font-mono font-bold text-red-900 items-center h-[calc(100%-25px)]">${acc.protectionCodes && acc.protectionCodes.filter(c=>c).length > 0 ? acc.protectionCodes.filter(c=>c).map(code => `<div class="border border-red-300 bg-white px-2 py-1 rounded">${code}</div>`).join('') : '<span class="text-red-400 italic font-sans text-[10px]">No codes</span>'}</div></div>
+                </div>
+                <div class="mt-8 text-right text-xs"><span class="border-t border-slate-600 pt-1 font-bold">Authorized Sign.</span></div>
+            `;
+            switchTab('detail');
+        }
+
+        function editCurrentAccount() {
+            const acc = accounts.find(a => a.id === currentAccountId);
+            if(acc) openForm(acc);
+        }
+
+        function deleteCurrentAccount() {
+            if(confirm("Delete this account permanently?")) {
+                accounts = accounts.filter(a => a.id !== currentAccountId);
+                saveToLocal();
+                switchTab('list');
+            }
+        }
+
+        // --- Data Import / Export ---
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(accounts, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `CoC_Data_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(dlAnchorElem);
+            dlAnchorElem.click();
+            dlAnchorElem.remove();
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importedAccounts = JSON.parse(event.target.result);
+                        if (Array.isArray(importedAccounts)) {
+                            accounts = importedAccounts;
+                            saveToLocal();
+                            alert("Data Restored Successfully!");
+                            renderDashboard();
+                            if(document.getElementById('tab-list').classList.contains('block')) renderList();
+                        }
+                    } catch (err) { alert("Invalid File Format."); }
+                };
+                reader.readAsText(file);
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+```
