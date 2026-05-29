@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" id="viewport-meta" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ARATS - Premium OS v32 (AI & Analytics Edition)</title>
     
     <script>
@@ -10,12 +10,18 @@
             document.body.innerHTML = `
                 <div style="padding: 20px; background: #fee2e2; color: #991b1b; font-family: sans-serif; border-bottom: 4px solid #b91c1c; position: fixed; top: 0; left: 0; right: 0; z-index: 999999;">
                     <h2 style="margin-top:0;">⚠️ System Error Detected!</h2>
-                    <p><strong>Kya issue hai:</strong> ${event.message}</p>
-                    <p><strong>Kaun se Line mein gadbad hai:</strong> Line ${event.lineno} | Column ${event.colno}</p>
-                    <pre style="background: #fecaca; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; margin-top: 10px;">${event.error ? event.error.stack : 'No further details available.'}</pre>
-                    <p style="font-size: 12px; margin-top: 10px; font-weight: bold;">Kripya is error ko code mein fix kijiye aur page reload kijiye.</p>
+                    <p><strong>Issue:</strong> ${event.message}</p>
+                    <p><strong>Location:</strong> Line ${event.lineno} | Column ${event.colno}</p>
+                    <pre style="background: #fecaca; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; margin-top: 10px;">${event.error ? event.error.stack : 'No details.'}</pre>
                 </div>
             `;
+        });
+        
+        // PWA Install Prompt Catcher
+        window.deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.deferredPrompt = e;
         });
     </script>
 
@@ -25,37 +31,18 @@
             "short_name": "ARATS",
             "start_url": ".",
             "display": "standalone",
-            "background_color": "#e9ecef",
-            "theme_color": "#1e293b",
-            "description": "Ultimate Academic, AI & Management System",
+            "background_color": "#ffffff",
+            "theme_color": "#1e3a8a",
+            "description": "ARATS Academic & Governance Management System",
             "icons": [{
-                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFBMjAyQyIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik00IDE5LjVBMi41IDIuNSAwIDAgMSA2LjUgMTdIMjAiLz48cGF0aCBkPSJNNi41IDJIMjB2MjBINi41QTIuNSAyLjUgMCAwIDEgNCAxOS41di0xNUEyLjUgMi41IDAgMCAxIDYuNSAyeiIvPjwvc3ZnPg==",
+                "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWUzYThhIiBzdHJva2Utd2lkdGg9IjQiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWUzYThhIiBzdHJva2Utd2lkdGg9IjEiLz48cGF0aCBkPSJNNTAgMTBMNTAgOTBNMTAgNTBMOTAgNTAiIHN0cm9rZT0iIzFlM2E4YSIgc3Ryb2tlLXdpZHRoPSIxIi8+PHBhdGggZD0iTTIyIDIyTDc4IDc4TTIyIDc4TDc4IDIyIiBzdHJva2U9IiMxZTNhOGEiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==",
                 "sizes": "512x512",
                 "type": "image/svg+xml",
                 "purpose": "any maskable"
             }]
         };
         const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
-        const manifestUrl = URL.createObjectURL(manifestBlob);
-        document.write(`<link rel="manifest" href="${manifestUrl}">`);
-
-        // Service Worker for Offline Mode
-        const swCode = `
-            const CACHE_NAME = 'arats-v32-pro';
-            self.addEventListener('install', e => { self.skipWaiting(); });
-            self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
-            self.addEventListener('fetch', e => {
-                e.respondWith(fetch(e.request).catch(() => new Response("Offline Mode active.")));
-            });
-        `;
-        const swBlob = new Blob([swCode], {type: 'application/javascript'});
-        const swUrl = URL.createObjectURL(swBlob);
-        
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register(swUrl).catch(err => console.log('PWA Failed', err));
-            });
-        }
+        document.write(`<link rel="manifest" href="${URL.createObjectURL(manifestBlob)}">`);
     </script>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -69,17 +56,17 @@
                         mono: ['Roboto Mono', 'monospace'] 
                     },
                     colors: { 
-                        gold: { 400: '#FACC15', 500: '#EAB308', 600: '#CA8A04', 700: '#A16207' }, 
-                        law: { 900: '#1e293b', 800: '#334155', 700: '#475569' } 
+                        india: { saffron: '#FF9933', white: '#FFFFFF', green: '#138808', blue: '#000080' }
                     },
                     animation: { 
-                        'fade-in': 'fadeIn 0.3s ease-out', 
-                        'slide-up': 'slideUp 0.4s ease-out', 
-                        'pop-in': 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                        'fade-in': 'fadeIn 0.4s ease-out', 
+                        'slide-up': 'slideUp 0.5s ease-out', 
+                        'pop-in': 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        'spin-slow': 'spin 8s linear infinite'
                     },
                     keyframes: {
                         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-                        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(30px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
                         popIn: { '0%': { opacity: '0', transform: 'scale(0.95)' }, '100%': { opacity: '1', transform: 'scale(1)' } }
                     }
                 }
@@ -90,7 +77,6 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -99,7 +85,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        /* General Setup */
         body { 
             background-color: #f8fafc; 
             -webkit-tap-highlight-color: transparent; 
@@ -115,53 +100,41 @@
         .custom-checkbox { width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; cursor: pointer; accent-color: #2563eb; transition: all 0.2s; }
         .glass { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); }
         
-        /* 3D Box & Document Pages */
-        .three-d-box { 
-            background: linear-gradient(145deg, #ffffff, #f1f5f9); 
-            box-shadow: 6px 6px 12px #e2e8f0, -6px -6px 12px #ffffff; 
-            border: 1px solid #e2e8f0; border-radius: 16px; 
-            transition: transform 0.2s, box-shadow 0.2s; 
-        }
+        .three-d-box { background: linear-gradient(145deg, #ffffff, #f1f5f9); box-shadow: 6px 6px 12px #e2e8f0, -6px -6px 12px #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; transition: transform 0.2s, box-shadow 0.2s; }
         .three-d-box:hover { box-shadow: 8px 8px 16px #cbd5e1, -8px -8px 16px #ffffff; }
         .doc-page { background: #ffffff; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; border-top: 4px solid #3b82f6; margin-bottom: 24px; position: relative; padding: 24px; border-radius: 8px; }
         
-        /* Standard Tables */
         .law-table th, .protocol-table th { background-color: #f1f5f9; color: #1e293b; padding: 12px; text-transform: uppercase; font-size: 11px; font-weight: 900; border: 1px solid #cbd5e1; }
         .law-table td, .protocol-table td { padding: 12px; border: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #334155; }
         
-        /* Routine Slider View Styles */
-        .slider-window { width: 100vw; height: 100vh; overflow: hidden; position: relative; background: #e9ecef; touch-action: none;}
-        .pages-wrapper { display: flex; height: 100%; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); width: fit-content; }
-        .page-card { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; flex-shrink: 0; position: relative; padding: 10px 0; box-sizing: border-box; }
-        .a4-wrapper { background: #ffffff; width: 96vw; max-width: 1300px; height: 88vh; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border-radius: 8px; padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; }
-        
-        .slider-table { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; }
-        .slider-table th { color: white; font-weight: bold; font-size: 11px; padding: 5px 2px; height: 8%; border: 1px solid #bdc3c7; text-align: center; }
-        .slider-table td { font-size: 10px; padding: 2px; height: 7%; border: 1px solid #bdc3c7; text-align: center; vertical-align: middle; cursor: pointer; transition: background 0.2s; user-select: none; font-weight: 500;}
-        .slider-table td:hover { background-color: #f1f2f6; }
-        .slider-table td.completed { background-color: #2ecc71 !important; color: white; font-weight: bold; border-color: #27ae60; }
-        
-        /* AI Chat Rendering Styles */
         .ai-message { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px 12px 12px 0; padding: 12px; margin-bottom: 12px; width: fit-content; max-width: 85%; }
         .user-message { background: #3b82f6; color: white; border-radius: 12px 12px 0 12px; padding: 12px; margin-bottom: 12px; width: fit-content; max-width: 85%; align-self: flex-end; margin-left: auto; }
-        .markdown-body p { margin-bottom: 0.5rem; }
-        .markdown-body ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.5rem; }
-        .markdown-body strong { font-weight: 900; color: #000; }
-        
-        /* Chart.js Container */
         .chart-container { position: relative; height: 250px; width: 100%; margin-bottom: 20px; display: flex; justify-content: center; }
+
+        .a4-notice-paper {
+            background: #fff;
+            width: 100%; max-width: 210mm;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            border: 1px solid #ddd;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Iframe Integration Container */
+        .external-app-container {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10000;
+            background: #fff;
+        }
         
-        /* Print Overrides */
         @media print {
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; overflow: visible; height: auto; }
             .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            .page-break { page-break-before: always; }
-            /* Slider print fix */
-            .slider-window { overflow: visible; height: auto; }
-            .pages-wrapper { flex-direction: column; transform: none !important; width: 100%; }
-            .page-card { height: auto; page-break-after: always; padding: 0; }
-            .a4-wrapper { box-shadow: none; border: none; width: 100%; max-width: 100%; height: 100vh; }
         }
     </style>
 </head>
@@ -169,49 +142,47 @@
     <div id="root"></div>
 
     <script type="text/babel">
-    // =========================================================================
-    // REACT HOOKS & CORE CONSTANTS
-    // =========================================================================
     const { useState, useEffect, useContext, createContext, useRef } = React;
 
-    const APP_VERSION = "32.0 (Premium Data Analytics & AI OS)";
+    const APP_VERSION = "33.0 (Ultimate AI & Integrations)";
     const DEV_USER = "Aryan Rajput";
     const LEGAL_CONFIG = { ENFORCEMENT_DATE: "2025-12-29", SELF_CONTROL_HIDDEN_DAY: 15 };
     
-    // Aapka Gemini API Key (Local Use Ke Liye)
+    // API KEY FOR GEMINI
     const GEMINI_API_KEY = "AIzaSyC51ksV3Lot15bPj4iUqas_GVDRUZFtKO4"; 
     
-    // =========================================================================
-    // GEMINI AI INTEGRATION ENGINE
-    // =========================================================================
+    // --- UPDATED AI SYSTEM ENGINE ---
     const GeminiAI = {
         generateResponse: async (prompt, systemInstruction = "You are an AI member of the ARATS Governance System.") => {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`;
-            const payload = { 
-                contents: [{ parts: [{ text: prompt }] }], 
-                systemInstruction: { parts: [{ text: systemInstruction }] } 
-            };
             try {
                 const response = await fetch(url, { 
                     method: "POST", 
                     headers: { "Content-Type": "application/json" }, 
-                    body: JSON.stringify(payload) 
+                    body: JSON.stringify({ 
+                        system_instruction: { parts: [{ text: systemInstruction }] },
+                        contents: [{ parts: [{ text: prompt }] }] 
+                    }) 
                 });
+                
+                if (!response.ok) {
+                    console.error("AI API Error:", response.statusText);
+                    return "⚠️ Warning: System couldn't connect to AI Server. Please check API Key or Internet.";
+                }
+
                 const data = await response.json();
                 if(data.candidates && data.candidates.length > 0) {
                     return data.candidates[0].content.parts[0].text;
                 }
-                return "Error: AI response formatting failed or blocked by safety filters.";
-            } catch (error) {
-                console.error("AI Generation Error:", error); 
-                return "Connection to AI Core failed. Check network or API key limits.";
+                return "Error: AI response blocked by safety filters.";
+            } catch (error) { 
+                console.error("Fetch Error:", error);
+                return "Connection to AI Core failed. The system is offline."; 
             }
         }
     };
 
-    // =========================================================================
-    // SVG ICONS REPOSITORY (COMPLETE)
-    // =========================================================================
+    // --- SYSTEM ICONS ---
     const Icons = {
         Back: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>,
         User: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
@@ -242,6 +213,9 @@
         Code: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
         Pen: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>,
         Help: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>,
+        Desktop: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+        Install: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+        Gamepad: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2" ry="2"></rect><path d="M6 12h4"></path><path d="M8 10v4"></path><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line></svg>
     };
     // =========================================================================
     // SYLLABUS & ACTIVITIES CONFIGURATION
@@ -332,7 +306,7 @@
     };
 
     // =========================================================================
-    // DATABASE MANAGER (ALL FUNCTIONS RESTORED)
+    // DATABASE MANAGER (ADDED DAILY NOTICE & PWA TRACKING)
     // =========================================================================
     const DB = {
         KEY_SESSION: 'ARATS_SESSION_V10', KEY_ACTIVITY: 'ARATS_ACTIVITY_LOGS_V10', KEY_CONSTITUTION: 'ARATS_CONSTITUTION_MASTER_V16',
@@ -342,10 +316,9 @@
         KEY_NOTICES_V2: 'ARATS_NOTICES_V2', KEY_NOTICE_CATS: 'ARATS_NOTICE_CATS_V1', KEY_CONST_V2: 'ARATS_CONST_V2', 
         KEY_RULEBOOK: 'ARATS_RULEBOOK_V1', KEY_ORD_CATS: 'ARATS_ORD_CATS_V1',
         KEY_HELP_DOCS: 'ARATS_GLOBAL_HELP_V1', KEY_DYNAMIC_FEATURES: 'ARATS_DYNAMIC_FEATURES_V1',
-        
         KEY_PARLIAMENT_BILLS: 'ARATS_PARLIAMENT_BILLS_V1', KEY_SUPREME_COURT_ABHILEKH: 'ARATS_SC_ABHILEKH_V1',
         KEY_ENEMY_HABITS: 'ARATS_ENEMY_HABITS_V1', KEY_GOOD_HABITS: 'ARATS_GOOD_HABITS_V1',
-        KEY_CUSTOM_ROUTINES: 'ARATS_CUSTOM_ROUTINES_V1',
+        KEY_CUSTOM_ROUTINES: 'ARATS_CUSTOM_ROUTINES_V1', KEY_DAILY_NOTICE: 'ARATS_DAILY_NOTICE_V1', KEY_APP_INSTALLED: 'ARATS_APP_INSTALLED_V1',
 
         getKeys: () => [
             'ARATS_SESSION_V10', 'ARATS_ACTIVITY_LOGS_V10', 'ARATS_CONSTITUTION_MASTER_V16',
@@ -353,7 +326,7 @@
             'ARATS_LEAVE_PROTO_V5', 'ARATS_AMENDMENTS_V5', 'ARATS_AW_V5', 'ARATS_NOTES_APP_V2_PRO',
             'ARATS_BANK_SBI_V1', 'ARATS_BANK_BOB_V1', 'ARATS_NOTICES_V2', 'ARATS_NOTICE_CATS_V1',
             'ARATS_CONST_V2', 'ARATS_RULEBOOK_V1', 'ARATS_ORD_CATS_V1', 'ARATS_GLOBAL_HELP_V1', 'ARATS_DYNAMIC_FEATURES_V1',
-            'ARATS_PARLIAMENT_BILLS_V1', 'ARATS_SC_ABHILEKH_V1', 'ARATS_ENEMY_HABITS_V1', 'ARATS_GOOD_HABITS_V1', 'ARATS_CUSTOM_ROUTINES_V1'
+            'ARATS_PARLIAMENT_BILLS_V1', 'ARATS_SC_ABHILEKH_V1', 'ARATS_ENEMY_HABITS_V1', 'ARATS_GOOD_HABITS_V1', 'ARATS_CUSTOM_ROUTINES_V1', 'ARATS_DAILY_NOTICE_V1'
         ],
         safeParse: (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch(e) { return fallback; } },
         save: (key, data) => { localStorage.setItem(key, JSON.stringify(data)); if(window.firebaseDB && window.firebaseRef && window.firebaseSet) { window.firebaseSet(window.firebaseRef(window.firebaseDB, key), data).catch(e => console.error(e)); } },
@@ -437,11 +410,21 @@
             "Objective Resolution", "Answer Writing", "Extracurricular", 
             "NCERT course + self control", "Digital Technology"
         ]),
-        saveCustomRoutines: (data) => DB.save(DB.KEY_CUSTOM_ROUTINES, data)
+        saveCustomRoutines: (data) => DB.save(DB.KEY_CUSTOM_ROUTINES, data),
+        
+        checkDailyNotice: () => {
+            const today = DB.getToday();
+            const lastShown = DB.safeParse(DB.KEY_DAILY_NOTICE, null);
+            if (lastShown !== today) {
+                DB.save(DB.KEY_DAILY_NOTICE, today);
+                return true; // Need to show today
+            }
+            return false; // Already shown today
+        }
     };
 
     // =========================================================================
-    // ANALYSIS ENGINE (5-TIER V3 SYLLABUS LOGIC WITH APRIL VERIFICATION RULE)
+    // ANALYSIS ENGINE (5-TIER V3 SYLLABUS LOGIC & APRIL VERIFICATION)
     // =========================================================================
     const AnalysisEngine = { 
         calculateScore: (dateStr, formData) => { 
@@ -526,7 +509,7 @@
                 else minPassing = 80;
             }
 
-            // --- STRICT APRIL VERIFICATION RULE (AS PER INSTRUCTIONS) ---
+            // Strict April 2026 Verification Rule for Purchase Permission Letter
             if (dateStr && dateStr.startsWith('2026-04')) {
                 if (final < 66) {
                     failReasons.push(`APRIL RULE FAILED: Minimum 66% completion strictly required for Purchase Permission Letter.`);
@@ -624,7 +607,7 @@
         }
     };
     // =========================================================================
-    // PART 4: APP CONTEXT (GLOBAL STATES) & HELPER COMPONENTS
+    // PART 4: APP CONTEXT, PWA, DESKTOP MODE & DAILY A4 NOTICE
     // =========================================================================
 
     const AppContext = createContext();
@@ -635,12 +618,13 @@
         const [currentDate, setCurrentDate] = useState(DB.getToday());
         const [trigger, setTrigger] = useState(0); 
         
-        // Modal States for Routine and Daily Activity Settings
+        // Modal States
         const [showRoutineViewer, setShowRoutineViewer] = useState(false);
         const [showRoutineMaker, setShowRoutineMaker] = useState(false);
         const [showStatsModal, setShowStatsModal] = useState(false);
         const [showInstructionModal, setShowInstructionModal] = useState(false);
         const [showAvailableDaysModal, setShowAvailableDaysModal] = useState(false);
+        const [showDailyNotice, setShowDailyNotice] = useState(false);
         
         const [editNoticeGlobal, setEditNoticeGlobal] = useState(null); 
         const [editFeatureGlobal, setEditFeatureGlobal] = useState(null);
@@ -648,6 +632,11 @@
         useEffect(() => { 
             const session = DB.getSession(); 
             if(session) { setUser(session); setView('dashboard'); } 
+            
+            // Check Daily Notice
+            if (DB.checkDailyNotice()) {
+                setShowDailyNotice(true);
+            }
         }, []);
 
         useEffect(() => { 
@@ -669,10 +658,188 @@
                 user, view, setView, currentDate, setCurrentDate, login, logout, refresh, trigger, 
                 showRoutineViewer, setShowRoutineViewer, showRoutineMaker, setShowRoutineMaker,
                 showStatsModal, setShowStatsModal, showInstructionModal, setShowInstructionModal, showAvailableDaysModal, setShowAvailableDaysModal,
+                showDailyNotice, setShowDailyNotice,
                 editNoticeGlobal, setEditNoticeGlobal, editFeatureGlobal, setEditFeatureGlobal 
             }}>
                 {children}
             </AppContext.Provider>
+        );
+    };
+
+    // --- PWA INSTALLER POPUP ---
+    const PWAInstaller = () => {
+        const [showPrompt, setShowPrompt] = useState(false);
+
+        useEffect(() => {
+            const isInstalled = localStorage.getItem(DB.KEY_APP_INSTALLED);
+            const checkPrompt = setInterval(() => {
+                if (!isInstalled && window.deferredPrompt) {
+                    setShowPrompt(true);
+                    clearInterval(checkPrompt);
+                }
+            }, 2000);
+            return () => clearInterval(checkPrompt);
+        }, []);
+
+        const handleInstall = async () => {
+            if (window.deferredPrompt) {
+                window.deferredPrompt.prompt();
+                const { outcome } = await window.deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    localStorage.setItem(DB.KEY_APP_INSTALLED, 'true');
+                    setShowPrompt(false);
+                }
+                window.deferredPrompt = null;
+            }
+        };
+
+        if (!showPrompt) return null;
+
+        return (
+            <div className="fixed bottom-0 left-0 w-full bg-white p-5 shadow-[0_-10px_20px_rgba(0,0,0,0.1)] z-[9999] border-t-4 border-india-blue animate-slide-up flex flex-col md:flex-row items-center justify-between gap-4 no-print">
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="w-12 h-12 rounded-full border-2 border-india-saffron flex items-center justify-center p-2 bg-slate-50 relative overflow-hidden">
+                        <Icons.Install />
+                    </div>
+                    <div>
+                        <h4 className="font-black text-slate-800 text-lg">Install ARATS App</h4>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Official Governance OS</p>
+                    </div>
+                </div>
+                <div className="flex gap-3 w-full md:w-auto">
+                    <button onClick={() => setShowPrompt(false)} className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-widest transition hover:bg-slate-200">Later</button>
+                    <button onClick={handleInstall} className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-india-blue text-white font-black text-xs uppercase tracking-widest shadow-md hover:bg-blue-900 transition">Install Now</button>
+                </div>
+            </div>
+        );
+    };
+
+    // --- DESKTOP MODE TOGGLE ---
+    const DesktopModeToggle = () => {
+        const toggleDesktopMode = () => {
+            const metaTag = document.getElementById('viewport-meta');
+            if (metaTag.getAttribute('content').includes('width=1200')) {
+                metaTag.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                alert("Mobile/Responsive Mode Activated.");
+            } else {
+                metaTag.setAttribute('content', 'width=1200, initial-scale=1.0');
+                alert("Desktop Mode Activated. Zoom in/out to adjust.");
+            }
+        };
+
+        return (
+            <button onClick={toggleDesktopMode} className="fixed bottom-20 right-5 w-12 h-12 bg-slate-800/90 backdrop-blur-md border border-slate-700 text-white rounded-full flex items-center justify-center shadow-xl hover:bg-slate-900 transition-all z-[100] group tap-effect no-print">
+                <Icons.Desktop />
+                <span className="absolute right-14 bg-white text-slate-800 text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none shadow-md border border-slate-200">Toggle Desktop View</span>
+            </button>
+        );
+    };
+
+    // --- DAILY A4 MINI CONSTITUTION NOTICE (STRICT 3 MIN TIMER) ---
+    const DailyMiniConstitution = () => {
+        const { showDailyNotice, setShowDailyNotice } = useContext(AppContext);
+        const [timeLeft, setTimeLeft] = useState(180); // 3 minutes = 180 seconds
+
+        useEffect(() => {
+            if (showDailyNotice && timeLeft > 0) {
+                const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+                return () => clearInterval(timer);
+            } else if (timeLeft <= 0 && showDailyNotice) {
+                setShowDailyNotice(false); // Auto closes strictly after 3 minutes
+            }
+        }, [showDailyNotice, timeLeft]);
+
+        if (!showDailyNotice) return null;
+
+        const formatTime = (seconds) => {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        };
+
+        // As per the provided handwritten image
+        const constitutionalPoints = [
+            { title: "Consistency & Patience", desc: "Success demands unwavering consistency and immense patience." },
+            { title: "Disciplined & Emotional Stability", desc: "Maintain absolute discipline and emotional balance in all circumstances." },
+            { title: "Games, Social Media & Mobile Prohibited", desc: "Complete ban on gaming, mindless scrolling, and unproductive mobile usage." },
+            { title: "Strict Mind & Urge Control Completely", desc: "Maintain absolute celibacy. Total control over physical and psychological urges." },
+            { title: "Change Identity & Personality", desc: "Transform into a highly focused, elite official personality immediately." },
+            { title: "No Wrong/Immoral Thought or Work", desc: "Uphold highest moral integrity. Zero tolerance for unethical actions or thoughts." },
+            { title: "Regulate the use of Bike", desc: "Minimize unnecessary travel. Use bike only for strict and essential purposes." },
+            { title: "Daily Exercise", desc: "Mandatory physical training to ensure peak health and stamina." },
+            { title: "Daily Activities Completed", desc: "100% completion of the targeted daily syllabus and protocol without fail." },
+            { title: "Trust Yourself, God & Government", desc: "Keep absolute faith in your abilities, the divine, and the constitutional process." }
+        ];
+
+        return (
+            <div className="fixed inset-0 z-[99999] bg-slate-900/95 backdrop-blur-xl flex justify-center items-center p-2 md:p-6 overflow-y-auto no-print">
+                <div className="a4-notice-paper my-auto relative animate-pop-in">
+                    
+                    {/* Fixed Timer at Top Right */}
+                    <div className="absolute top-4 right-4 bg-red-100 border border-red-300 text-red-800 px-4 py-2 rounded-xl font-black text-sm shadow-md flex items-center gap-2">
+                        <Icons.Timer /> 
+                        {formatTime(timeLeft)}
+                    </div>
+
+                    <div className="p-8 md:p-12">
+                        {/* Header */}
+                        <div className="text-center mb-8 border-b-4 border-double border-slate-800 pb-6">
+                            <div className="w-20 h-20 mx-auto mb-4 bg-india-blue rounded-full flex items-center justify-center shadow-inner">
+                                {/* Ashoka Chakra SVG representation */}
+                                <svg className="w-14 h-14 text-white animate-spin-slow" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="50" cy="50" r="45"/>
+                                    <circle cx="50" cy="50" r="35"/>
+                                    {Array.from({length: 24}).map((_, i) => (
+                                        <line key={i} x1="50" y1="50" x2={50 + 45 * Math.cos((i * 15 * Math.PI) / 180)} y2={50 + 45 * Math.sin((i * 15 * Math.PI) / 180)} />
+                                    ))}
+                                </svg>
+                            </div>
+                            <h1 className="text-3xl md:text-4xl font-black font-serif text-slate-900 tracking-tighter uppercase mb-2">Government of India</h1>
+                            <h2 className="text-xl font-bold text-india-blue tracking-widest uppercase">Supreme Directive & Code of Conduct</h2>
+                            <p className="text-xs font-bold text-slate-500 mt-2">Issued to: Aryan Rajput | Date: {DB.getToday()}</p>
+                        </div>
+
+                        {/* Preamble / Intro */}
+                        <p className="text-sm font-medium text-slate-700 leading-relaxed mb-6 italic text-justify">
+                            This document serves as the absolute daily constitutional oath. Acknowledgment of these directives is mandatory prior to accessing the ARATS System. Non-compliance is considered a strict violation of protocol.
+                        </p>
+
+                        {/* Table of Rules */}
+                        <table className="w-full border-collapse border-2 border-slate-800 mb-8">
+                            <thead>
+                                <tr className="bg-slate-800 text-white">
+                                    <th className="border-2 border-slate-800 p-3 text-center w-12 font-black">#</th>
+                                    <th className="border-2 border-slate-800 p-3 text-left font-black tracking-widest uppercase">Constitutional Mandate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {constitutionalPoints.map((point, idx) => (
+                                    <tr key={idx} className="bg-white">
+                                        <td className="border-2 border-slate-800 p-3 text-center font-black text-slate-600 bg-slate-50">{idx + 1}</td>
+                                        <td className="border-2 border-slate-800 p-4">
+                                            <h4 className="font-black text-slate-900 text-sm uppercase mb-1">{point.title}</h4>
+                                            <p className="text-xs font-semibold text-slate-600 leading-relaxed">{point.desc}</p>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        {/* Footer / Signature Area */}
+                        <div className="flex justify-between items-end mt-12 pt-6 border-t-2 border-slate-300">
+                            <div>
+                                <div className="w-32 h-16 border-b border-dashed border-slate-500 mb-2 flex items-end justify-center"><span className="font-serif italic text-xl text-slate-400">Accepted</span></div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Governor's Signature</p>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-3xl font-black text-red-600 border-4 border-red-600 p-2 rounded-md inline-block rotate-[-10deg] opacity-80 mb-2 tracking-widest">SEALED</div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Authorized</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
         );
     };
 
@@ -777,7 +944,7 @@
         );
     };
     // =========================================================================
-    // PART 5: NOTICES BUTTON, ROUTINE MENU & CORE SCREENS (ENTRY & DASHBOARD)
+    // PART 5: NOTICES BUTTON, EXTERNAL APPS, ROUTINE MENU & CORE SCREENS
     // =========================================================================
 
     // --- DEPARTMENT NOTICE BUTTON ---
@@ -831,35 +998,34 @@
         );
     };
 
-    // --- TOP ROUTINE MENU BUTTON ---
-    const RoutineMenuButton = () => {
-        const { setShowRoutineViewer, setShowRoutineMaker } = useContext(AppContext);
-        const [isOpen, setIsOpen] = useState(false);
+    // --- EXTERNAL APP INTEGRATOR (IFRAME ENGINE) ---
+    // Yeh component aapki "index (75) (30).html" (Routine) aur "index (75) (31).html" (CoC Vault) ko 100% original form mein load karega
+    const ExternalApp = ({ url, title, onClose }) => {
+        return (
+            <div className="external-app-container animate-fade-in no-print">
+                <div className="bg-slate-900 text-white p-3 flex justify-between items-center shadow-md z-[10001] relative">
+                    <div className="flex items-center gap-3">
+                        <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition"><Icons.Back /></button>
+                        <h2 className="font-black text-sm uppercase tracking-widest flex items-center gap-2">{title} <span className="bg-blue-600 text-[8px] px-2 py-0.5 rounded">V2 Engine</span></h2>
+                    </div>
+                    <button onClick={() => {
+                        const iframe = document.getElementById('external-iframe-frame');
+                        if(iframe) iframe.src = iframe.src;
+                    }} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition text-[10px] font-bold tracking-widest uppercase">Reload</button>
+                </div>
+                <iframe id="external-iframe-frame" src={url} className="w-full h-[calc(100vh-56px)] border-none bg-slate-100" title={title}></iframe>
+            </div>
+        );
+    };
 
+    // --- TOP ROUTINE MENU BUTTON (UPDATED) ---
+    const RoutineMenuButton = () => {
+        const { setView } = useContext(AppContext);
         return (
             <div className="relative z-50 no-print">
-                <button onClick={() => setIsOpen(!isOpen)} className="p-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-full shadow-sm transition flex items-center justify-center">
+                <button onClick={() => setView('external_routine')} className="p-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-full shadow-sm transition flex items-center justify-center">
                     <Icons.Grid />
                 </button>
-
-                {isOpen && (
-                    <>
-                        <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-pop-in">
-                            <div className="bg-indigo-600 text-white p-3 text-center">
-                                <span className="text-[10px] font-black uppercase tracking-widest">Routine Engine</span>
-                            </div>
-                            <div className="p-2 space-y-1 bg-slate-50">
-                                <button onClick={() => { setIsOpen(false); setShowRoutineViewer(true); }} className="w-full text-left px-4 py-3 rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition text-sm font-bold text-slate-800 flex items-center gap-3">
-                                    <span className="text-xl">📅</span> Routine Viewer
-                                </button>
-                                <button onClick={() => { setIsOpen(false); setShowRoutineMaker(true); }} className="w-full text-left px-4 py-3 rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition text-sm font-bold text-slate-800 flex items-center gap-3">
-                                    <span className="text-xl">⚙️</span> Routine Maker
-                                </button>
-                            </div>
-                        </div>
-                    </>
-                )}
             </div>
         );
     };
@@ -869,8 +1035,8 @@
         const { login } = useContext(AppContext);
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-[#e9ecef]">
-                <div className="glass w-full max-w-md p-8 rounded-3xl shadow-2xl relative z-10 text-center animate-fade-in border-t-4 border-blue-500">
-                    <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600 mb-2 tracking-tighter">ARATS</h1>
+                <div className="glass w-full max-w-md p-8 rounded-3xl shadow-2xl relative z-10 text-center animate-fade-in border-t-4 border-india-blue">
+                    <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-india-blue to-blue-600 mb-2 tracking-tighter">ARATS</h1>
                     <div className="flex justify-center items-center gap-2 mb-8">
                         <span className="bg-slate-900 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">v{APP_VERSION}</span>
                     </div>
@@ -911,7 +1077,7 @@
                         </div>
                     </div>
                     
-                    <div onClick={() => { setView('activity'); }} className="p-6 rounded-[2rem] text-white shadow-xl bg-gradient-to-br from-indigo-600 to-blue-700 transform transition active:scale-95 cursor-pointer relative overflow-hidden three-d-box hover:shadow-2xl border-none">
+                    <div onClick={() => { setView('activity'); }} className="p-6 rounded-[2rem] text-white shadow-xl bg-gradient-to-br from-india-blue to-blue-700 transform transition active:scale-95 cursor-pointer relative overflow-hidden three-d-box hover:shadow-2xl border-none">
                         <div className="relative z-10 flex justify-between items-start">
                             <div>
                                 <p className="text-blue-200 text-[10px] font-bold uppercase mb-1 tracking-widest">Daily Performance</p>
@@ -929,11 +1095,11 @@
                 <div className="p-6 space-y-5 no-print">
                     <DynamicFeatureRenderer location="Dashboard Top" />
 
-                    <button onClick={() => setView('integrity_dashboard')} className="w-full bg-white text-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-5 three-d-box hover:border-blue-400 transition">
-                        <div className="bg-blue-50 p-4 rounded-xl text-blue-600"><Icons.Constitution /></div>
+                    <button onClick={() => setView('integrity_dashboard')} className="w-full bg-white text-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-5 three-d-box hover:border-india-blue transition">
+                        <div className="bg-blue-50 p-4 rounded-xl text-india-blue"><Icons.Constitution /></div>
                         <div className="text-left">
                             <h3 className="font-black text-[17px] uppercase">Constitutional Rules</h3>
-                            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-1">Law, AI & Ordinance</p>
+                            <p className="text-[10px] text-india-blue font-bold uppercase tracking-widest mt-1">Law, AI & Ordinance</p>
                         </div>
                     </button>
                     
@@ -1414,287 +1580,7 @@
         );
     };
     // =========================================================================
-    // PART 8: ROUTINE MAKER & ROUTINE VIEWER (SLIDER COMPONENT)
-    // =========================================================================
-
-    // --- ROUTINE MAKER COMPONENT (Edit Your Grid Activities) ---
-    const RoutineMaker = () => {
-        const { setShowRoutineMaker } = useContext(AppContext);
-        const [routines, setRoutines] = useState(DB.getCustomRoutines() || []);
-        const [newItem, setNewItem] = useState('');
-
-        const handleAdd = () => { 
-            if (!newItem.trim()) return; 
-            setRoutines([...routines, newItem.trim()]); 
-            setNewItem(''); 
-        };
-        
-        const handleRemove = (index) => { 
-            setRoutines(routines.filter((_, i) => i !== index)); 
-        };
-        
-        const handleSave = () => { 
-            DB.saveCustomRoutines(routines); 
-            alert("Routines Successfully Updated! The Grid Planner will now use these activities."); 
-            setShowRoutineMaker(false); 
-        };
-
-        return (
-            <div className="fixed inset-0 z-[300] bg-slate-900/80 backdrop-blur-sm flex justify-center items-center p-4 animate-pop-in">
-                <div className="bg-white w-full max-w-md max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border-t-8 border-indigo-500">
-                    <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 no-print">
-                        <div>
-                            <h3 className="font-black text-xl text-slate-800 uppercase tracking-wide">Routine Maker</h3>
-                            <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-1">Edit Grid Activities</p>
-                        </div>
-                        <button onClick={() => setShowRoutineMaker(false)} className="p-2 bg-slate-200 text-slate-500 hover:text-red-500 rounded-xl shadow-sm border border-slate-200 font-bold text-xs uppercase tracking-widest transition">Close ✕</button>
-                    </div>
-                    
-                    <div className="flex-1 overflow-y-auto p-6 bg-[#f8fafc]">
-                        <div className="flex gap-2 mb-6">
-                            <input className="flex-1 bg-white border border-slate-300 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 shadow-sm" placeholder="Add new activity..." value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAdd()} />
-                            <button onClick={handleAdd} className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-black shadow-md hover:bg-indigo-700 transition text-lg">+</button>
-                        </div>
-                        
-                        <div className="space-y-3">
-                            {routines.map((rt, idx) => (
-                                <div key={idx} className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200 group hover:border-indigo-300 transition">
-                                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">{rt}</span>
-                                    <button onClick={() => handleRemove(idx)} className="text-red-400 hover:text-red-600 p-2 bg-red-50 hover:bg-red-100 rounded-lg opacity-0 group-hover:opacity-100 transition"><Icons.Trash /></button>
-                                </div>
-                            ))}
-                            {routines.length === 0 && (
-                                <p className="text-center text-xs font-bold text-slate-400 py-6 uppercase tracking-widest">No activities found.</p>
-                            )}
-                        </div>
-                    </div>
-                    
-                    <div className="p-4 bg-white border-t border-slate-100">
-                        <button onClick={handleSave} className="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg hover:bg-slate-800 transition flex justify-center items-center gap-2"><Icons.Save /> Save Configuration</button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    // --- ROUTINE VIEWER (THE SLIDER & GRID UI) ---
-    const RoutineViewer = () => {
-        const { setShowRoutineViewer } = useContext(AppContext);
-        const [currentMonthId, setCurrentMonthId] = useState(2); 
-        const [currentPage, setCurrentPage] = useState(0);
-        const [showMonthModal, setShowMonthModal] = useState(false);
-        const [dailyModalData, setDailyModalData] = useState(null);
-        const [trigger, setTrigger] = useState(0); 
-
-        const routinesList = DB.getCustomRoutines() || [];
-        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        const headerColors = ["#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#1abc9c", "#3498db", "#9b59b6"];
-        
-        const monthsData = [
-            { id: 2, name: "March", days: 31, startDay: 12 }, { id: 3, name: "April", days: 30, startDay: 1 },
-            { id: 4, name: "May", days: 31, startDay: 1 }, { id: 5, name: "June", days: 30, startDay: 1 },
-            { id: 6, name: "July", days: 31, startDay: 1 }, { id: 7, name: "August", days: 31, startDay: 1 },
-            { id: 8, name: "September", days: 30, startDay: 1 }, { id: 9, name: "October", days: 31, startDay: 1 },
-            { id: 10, name: "November", days: 30, startDay: 1 }, { id: 11, name: "December", days: 31, startDay: 1 }
-        ];
-
-        const shuffleArray = (array) => { 
-            let arr = [...array]; 
-            for (let i = arr.length - 1; i > 0; i--) { 
-                const j = Math.floor(Math.random() * (i + 1)); 
-                [arr[i], arr[j]] = [arr[j], arr[i]]; 
-            } 
-            return arr; 
-        };
-        
-        const safeId = (str) => str.replace(/<[^>]*>?/gm, '').replace(/[^a-zA-Z0-9]/g, '');
-
-        const getScheduleForMonth = (monthObj) => {
-            let storageKey = `arats_fixed_2026_${monthObj.id}`;
-            let savedSchedule = localStorage.getItem(storageKey);
-            let totalDaysToGenerate = monthObj.days - monthObj.startDay + 1;
-            
-            if (savedSchedule) {
-                return JSON.parse(savedSchedule);
-            } else { 
-                let newSchedule = []; 
-                for(let i = 0; i < totalDaysToGenerate; i++) newSchedule.push(shuffleArray(routinesList)); 
-                localStorage.setItem(storageKey, JSON.stringify(newSchedule)); 
-                return newSchedule; 
-            }
-        };
-
-        useEffect(() => {
-            let today = new Date();
-            if (today.getFullYear() === 2026 && today.getMonth() >= 2 && today.getMonth() <= 11) {
-                setCurrentMonthId(today.getMonth());
-            } else { 
-                const savedMonth = localStorage.getItem('arats_selected_month'); 
-                if (savedMonth) setCurrentMonthId(parseInt(savedMonth)); 
-            }
-        }, []);
-
-        const monthObj = monthsData.find(m => m.id === currentMonthId) || monthsData[0];
-        const scheduleData = getScheduleForMonth(monthObj);
-
-        let scheduleDates = [];
-        let startDate = new Date(2026, monthObj.id, monthObj.startDay); 
-        let totalDays = monthObj.days - monthObj.startDay + 1;
-
-        for (let i = 0; i < totalDays; i++) {
-            let currentDate = new Date(startDate); 
-            currentDate.setDate(startDate.getDate() + i);
-            scheduleDates.push({ 
-                fullDateId: `2026-${monthObj.id}-${currentDate.getDate()}`, 
-                displayDate: `${currentDate.getDate()} ${monthObj.name}`, 
-                dateNum: currentDate.getDate(), 
-                dayIndex: currentDate.getDay(), 
-                dayStr: dayNames[currentDate.getDay()], 
-                dataIndex: i 
-            });
-        }
-
-        let pageChunks = []; 
-        let currentChunk = [];
-        scheduleDates.forEach((dayObj, index) => {
-            currentChunk.push(dayObj);
-            if (dayObj.dayIndex === 0 || index === scheduleDates.length - 1) { 
-                pageChunks.push(currentChunk); 
-                currentChunk = []; 
-            }
-        });
-
-        const totalPages = pageChunks.length;
-
-        const toggleCell = (cellId) => { 
-            if (localStorage.getItem(cellId) === 'done') localStorage.removeItem(cellId); 
-            else localStorage.setItem(cellId, 'done'); 
-            setTrigger(t => t + 1); 
-        };
-
-        const touchStartX = useRef(0); 
-        const touchEndX = useRef(0);
-        
-        const handleTouchStart = (e) => { 
-            touchStartX.current = e.changedTouches[0].screenX; 
-        };
-        const handleTouchEnd = (e) => {
-            touchEndX.current = e.changedTouches[0].screenX; 
-            let threshold = 40; 
-            if (touchEndX.current < touchStartX.current - threshold && currentPage < totalPages - 1) setCurrentPage(currentPage + 1);
-            if (touchEndX.current > touchStartX.current + threshold && currentPage > 0) setCurrentPage(currentPage - 1);
-        };
-
-        return (
-            <div className="fixed inset-0 z-[200] bg-[#e9ecef] flex flex-col overflow-hidden animate-fade-in">
-                
-                <div className="fixed top-4 right-4 z-50 flex gap-3 no-print">
-                    <button onClick={() => setShowRoutineViewer(false)} className="w-12 h-12 bg-red-500 text-white rounded-full font-black shadow-lg hover:bg-red-600 transition flex items-center justify-center">✕</button>
-                    <button onClick={() => { document.body.classList.add('export-mode'); setTimeout(() => { window.print(); document.body.classList.remove('export-mode'); }, 500); }} className="w-12 h-12 bg-white text-slate-800 rounded-full font-black shadow-lg border border-slate-200 hover:bg-slate-50 transition flex items-center justify-center text-xl">🖨️</button>
-                    <button onClick={() => setShowMonthModal(true)} className="w-12 h-12 bg-purple-600 text-white rounded-full font-black shadow-lg hover:bg-purple-700 transition flex items-center justify-center text-xl">📅</button>
-                </div>
-
-                <div className="slider-window" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-                    <div className="pages-wrapper" style={{ transform: `translateX(-${currentPage * 100}vw)` }}>
-                        {pageChunks.map((chunk, pageIndex) => (
-                            <div key={pageIndex} className="page-card">
-                                <div className="a4-wrapper">
-                                    <div className="text-center mb-3 no-print border-b border-slate-200 pb-2">
-                                        <h1 className="text-2xl font-black text-slate-900 uppercase tracking-widest">ARATS Premium Planner</h1>
-                                        <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">{monthObj.name} 2026 | Week View | Page {pageIndex + 1}</p>
-                                    </div>
-                                    <div className="flex-1 overflow-hidden flex flex-col rounded-xl border border-slate-200 shadow-inner">
-                                        <table className="slider-table">
-                                            <thead>
-                                                <tr>
-                                                    {chunk.map(dayObj => (
-                                                        <th key={dayObj.fullDateId} style={{ backgroundColor: headerColors[dayObj.dayIndex], color: headerColors[dayObj.dayIndex] === '#f1c40f' ? '#333' : 'white' }} onClick={() => setDailyModalData({ dayObj, activities: scheduleData[dayObj.dataIndex], color: headerColors[dayObj.dayIndex] })}>
-                                                            <div className="text-sm uppercase tracking-wide">{dayObj.displayDate}</div>
-                                                            <div className="text-[10px] opacity-90">({dayObj.dayStr})</div>
-                                                        </th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {Array.from({length: 13}).map((_, rowIndex) => (
-                                                    <tr key={rowIndex}>
-                                                        {chunk.map(dayObj => {
-                                                            const actName = scheduleData[dayObj.dataIndex][rowIndex] || '';
-                                                            const cellId = `cell-${dayObj.fullDateId}-${safeId(actName)}`;
-                                                            const isDone = localStorage.getItem(cellId) === 'done';
-                                                            return (
-                                                                <td key={cellId} className={isDone ? 'completed' : ''} onClick={() => toggleCell(cellId)}>
-                                                                    <div dangerouslySetInnerHTML={{ __html: actName }} className="px-1" />
-                                                                </td>
-                                                            );
-                                                        })}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 bg-slate-900 text-white px-6 py-2 rounded-full shadow-xl border border-slate-700 text-xs font-black uppercase tracking-widest no-print">
-                    Page {currentPage + 1} of {totalPages}
-                </div>
-
-                {showMonthModal && (
-                    <div className="fixed inset-0 z-[300] bg-slate-900/80 backdrop-blur-sm flex justify-center items-center p-4 animate-pop-in no-print">
-                        <div className="bg-white p-6 rounded-3xl shadow-2xl w-full max-w-sm border-t-8 border-purple-500">
-                            <h2 className="text-xl font-black text-slate-800 mb-6 text-center uppercase tracking-widest">Select Month (2026)</h2>
-                            <div className="grid grid-cols-3 gap-3">
-                                {monthsData.map(m => (
-                                    <button key={m.id} className={`p-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${m.id === currentMonthId ? 'bg-purple-600 text-white shadow-md transform scale-105' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-purple-50 hover:text-purple-600'}`} onClick={() => { localStorage.setItem('arats_selected_month', m.id); setCurrentMonthId(m.id); setCurrentPage(0); setShowMonthModal(false); }}>
-                                        {m.name}
-                                    </button>
-                                ))}
-                            </div>
-                            <button onClick={() => setShowMonthModal(false)} className="mt-6 w-full py-4 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 font-black rounded-xl text-xs uppercase tracking-widest transition">Cancel / Close</button>
-                        </div>
-                    </div>
-                )}
-
-                <div className={`fixed inset-0 bg-white z-[300] transition-all duration-300 ease-out flex flex-col no-print ${dailyModalData ? 'top-0' : 'top-[100vh]'}`}>
-                    {dailyModalData && (
-                        <>
-                            <div className="p-5 flex justify-between items-center text-white shadow-md z-10" style={{ background: dailyModalData.color }}>
-                                <h2 className="text-xl font-black uppercase tracking-widest m-0 drop-shadow-sm">{dailyModalData.dayObj.displayDate} - {dailyModalData.dayObj.dayStr}</h2>
-                                <button onClick={() => setDailyModalData(null)} className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 transition font-black text-lg">✕</button>
-                            </div>
-                            <div className="flex-1 overflow-y-auto bg-slate-50 p-4">
-                                <table className="w-full border-collapse bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
-                                    <tbody>
-                                        {dailyModalData.activities.map((act, idx) => {
-                                            const cellId = `cell-${dailyModalData.dayObj.fullDateId}-${safeId(act)}`;
-                                            const isDone = localStorage.getItem(cellId) === 'done';
-                                            return (
-                                                <tr key={idx} className={`cursor-pointer border-b border-slate-100 transition-colors ${isDone ? 'bg-green-500 text-white' : 'text-slate-800 hover:bg-slate-50'}`} onClick={() => toggleCell(cellId)}>
-                                                    <td className="p-5 text-sm font-bold uppercase tracking-wide flex items-center gap-3">
-                                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 ${isDone ? 'border-white bg-white/20' : 'border-slate-300'}`}>
-                                                            {isDone && <span className="text-[10px]">✓</span>}
-                                                        </div>
-                                                        <div dangerouslySetInnerHTML={{ __html: act }} />
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-    // =========================================================================
-    // PART 9: WEEKLY REPORT & ADVANCED MONTHLY CALENDAR
+    // PART 8: WEEKLY REPORT & ADVANCED MONTHLY CALENDAR
     // =========================================================================
 
     // --- WEEKLY VIEW REPORT ---
@@ -3237,6 +3123,13 @@
                             <h3 className="text-lg font-black text-slate-800 uppercase tracking-wide">System Features</h3>
                             <p className="text-[10px] text-slate-500 mt-2 font-bold tracking-widest uppercase">Manage Custom Elements</p>
                         </button>
+
+                        {/* NEW CoC VAULT BUTTON (ACCOUNT REGISTRY) */}
+                        <button onClick={() => setView('external_coc')} className="three-d-box p-8 flex flex-col items-center justify-center text-center group hover:scale-[1.03] transition-transform bg-white border border-rose-200">
+                            <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-rose-600 group-hover:text-white transition-colors duration-300 shadow-sm border border-rose-100"><Icons.Gamepad /></div>
+                            <h3 className="text-lg font-black text-slate-800 uppercase tracking-wide">CoC World</h3>
+                            <p className="text-[10px] text-slate-500 mt-2 font-bold tracking-widest uppercase">Account Registry</p>
+                        </button>
                     </div>
 
                     <DynamicFeatureRenderer location="Management System Bottom" />
@@ -4197,7 +4090,7 @@
     // =========================================================================
     
     const MainApp = () => {
-        const { view, showRoutineViewer, showRoutineMaker } = useContext(AppContext);
+        const { view, showRoutineViewer, showRoutineMaker, setView } = useContext(AppContext);
         
         // Dynamic router map
         const renderView = () => {
@@ -4238,6 +4131,10 @@
                 case 'feature_builder': return <FeatureBuilder />;
                 case 'feature_list': return <FeatureList />;
                 
+                // --- EXTERNAL IFRAME APPS ---
+                case 'external_routine': return <ExternalApp url="index (75) (30).html" title="Elite Scholar OS" onClose={() => setView('dashboard')} />;
+                case 'external_coc': return <ExternalApp url="index (75) (31).html" title="CoC Account Registry" onClose={() => setView('management_system')} />;
+                
                 default: return <EntryScreen />;
             }
         };
@@ -4245,7 +4142,13 @@
         return (
             <>
                 {renderView()}
+                
+                {/* Global Components Rendered Automatically */}
                 <GlobalHelpModule />
+                <PWAInstaller />
+                <DesktopModeToggle />
+                <DailyMiniConstitution />
+                
                 {showRoutineViewer && <RoutineViewer />}
                 {showRoutineMaker && <RoutineMaker />}
             </>
