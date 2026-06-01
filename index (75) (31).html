@@ -1,16 +1,19 @@
-```html
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoC Account Registry</title>
+    <title>CoC Ultimate Vault & Market</title>
     
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Lucide Icons (CDN) -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- JSZip (ZIP file export/import ke liye) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
         /* Basic Setup & Scrollbars */
@@ -25,12 +28,15 @@
         .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
         
+        /* Auto Capitalize for specific inputs */
+        .auto-caps { text-transform: uppercase; }
+
         /* Advanced Print Styles */
         @media print {
-            body { background: white !important; }
+            body { background: white !important; font-size: 10px !important; }
             .no-print { display: none !important; }
             aside { display: none !important; }
-            main { padding: 0 !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; }
+            main { padding: 0 !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; height: auto !important; overflow: visible !important; }
             
             /* Remove height restrictions for printing full tables */
             .print-auto-height { height: auto !important; overflow: visible !important; }
@@ -40,114 +46,158 @@
             .print\:p-0 { padding: 0 !important; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
+            /* Fix Excel View Cutoff */
+            #tab-excel table { width: 100% !important; table-layout: auto !important; }
+            #tab-excel th, #tab-excel td { padding: 2px !important; font-size: 8px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+            
+            /* Market Print AD Style */
+            .market-print-ad { border: 2px solid #1e293b; padding: 20px; border-radius: 12px; page-break-inside: avoid; }
+            
             /* Dynamic Orientation */
-            body.print-landscape { @page { size: landscape; margin: 1cm; } }
-            body.print-portrait { @page { size: portrait; margin: 1cm; } }
+            body.print-landscape { @page { size: A4 landscape; margin: 5mm; } }
+            body.print-portrait { @page { size: A4 portrait; margin: 10mm; } }
         }
     </style>
 </head>
 <body class="text-slate-800 flex flex-col md:flex-row min-h-screen">
 
     <!-- Sidebar / Navigation -->
-    <aside class="w-full md:w-64 bg-slate-900 text-white min-h-screen flex flex-col shadow-xl no-print text-sm shrink-0">
+    <aside class="w-full md:w-64 bg-slate-900 text-white min-h-screen flex flex-col shadow-xl no-print text-sm shrink-0 z-50">
         <div class="p-4 bg-slate-950 border-b border-slate-800 flex items-center gap-3">
             <i data-lucide="shield" class="text-blue-400 w-7 h-7"></i>
             <div>
-                <h1 class="font-bold text-lg tracking-wide text-white">CoC Vault</h1>
-                <p class="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">Registry System</p>
+                <h1 class="font-bold text-lg tracking-wide text-white">CoC Vault Pro</h1>
+                <p class="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">Ultimate System</p>
             </div>
         </div>
 
-        <nav class="flex-1 p-3 space-y-1" id="nav-menu">
+        <nav class="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar" id="nav-menu">
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2 px-2">Core System</div>
             <button onclick="switchTab('home')" id="btn-home" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors bg-blue-600 text-white">
                 <i data-lucide="home" class="w-4 h-4"></i> Dashboard
             </button>
-            <button onclick="openForm()" id="btn-form" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
+            <button onclick="openForm('account')" id="btn-form" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Account
             </button>
             <button onclick="switchTab('list')" id="btn-list" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
-                <i data-lucide="list" class="w-4 h-4"></i> Account List
+                <i data-lucide="users" class="w-4 h-4"></i> Account List
             </button>
+
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-4 px-2">Clan Management</div>
+            <button onclick="switchTab('clans')" id="btn-clans" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
+                <i data-lucide="swords" class="w-4 h-4"></i> My Clans
+            </button>
+
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-4 px-2">Trading Center</div>
+            <button onclick="switchTab('market')" id="btn-market" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-amber-400 font-semibold border border-transparent hover:border-amber-900/50 bg-amber-900/10">
+                <i data-lucide="shopping-cart" class="w-4 h-4"></i> Market / Store
+            </button>
+
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-4 px-2">Reports & Export</div>
             <button onclick="switchTab('excel')" id="btn-excel" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
                 <i data-lucide="table" class="w-4 h-4"></i> Excel View
             </button>
-            <div class="pt-2 mt-2 border-t border-slate-800">
-                <button onclick="switchTab('customPrint')" id="btn-customPrint" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
-                    <i data-lucide="check-square" class="w-4 h-4"></i> Custom Print
-                </button>
-            </div>
+            <button onclick="switchTab('customPrint')" id="btn-customPrint" class="w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300">
+                <i data-lucide="printer" class="w-4 h-4"></i> Custom Print
+            </button>
         </nav>
 
         <div class="p-4 bg-slate-950 border-t border-slate-800 space-y-2">
-            <button onclick="exportData()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 p-2 rounded text-xs font-semibold transition-colors">
-                <i data-lucide="download" class="w-4 h-4"></i> Backup Data
+            <!-- Updated Export/Import for ZIP files -->
+            <button onclick="exportDataZip()" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 p-2 rounded text-xs font-bold transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i> Backup (ZIP)
             </button>
-            <label class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 p-2 rounded text-xs font-semibold transition-colors cursor-pointer">
-                <i data-lucide="upload" class="w-4 h-4"></i> Restore Data
-                <input type="file" accept=".json" onchange="importData(event)" class="hidden" />
+            <label class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 p-2 rounded text-xs font-semibold transition-colors cursor-pointer border border-slate-600">
+                <i data-lucide="upload" class="w-4 h-4"></i> Restore (ZIP)
+                <input type="file" accept=".zip" onchange="importDataZip(event)" class="hidden" />
             </label>
         </div>
     </aside>
 
     <!-- Main Workspace -->
-    <main class="flex-1 p-2 md:p-4 overflow-y-auto w-full bg-slate-100 h-screen custom-scrollbar print-auto-height">
+    <main class="flex-1 p-2 md:p-4 overflow-y-auto w-full bg-slate-100 h-screen custom-scrollbar print-auto-height relative">
         <div class="max-w-7xl mx-auto pb-20">
 
             <!-- 1. DASHBOARD TAB -->
             <div id="tab-home" class="tab-section block animate-fade-in space-y-4">
-                <div class="flex justify-between items-center bg-white p-4 rounded border border-slate-200 shadow-sm no-print">
+                <div class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded border border-slate-200 shadow-sm no-print">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-800">System Overview</h2>
-                        <p class="text-xs text-slate-500 mt-1">Compact dashboard for quick insights.</p>
+                        <h2 class="text-xl font-bold text-slate-800">Command Center</h2>
+                        <p class="text-xs text-slate-500 mt-1">Overview of Accounts, Clans, and Market items.</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-blue-50 p-4 rounded border border-blue-200 flex flex-col justify-center items-center">
-                        <i data-lucide="database" class="text-blue-500 mb-2 w-6 h-6"></i>
+                        <i data-lucide="users" class="text-blue-500 mb-2 w-6 h-6"></i>
                         <h3 class="text-xs font-bold text-slate-500 uppercase">Total Accounts</h3>
                         <p class="text-2xl font-black text-blue-700" id="stat-total">0</p>
                     </div>
-                    <div class="bg-green-50 p-4 rounded border border-green-200 flex flex-col justify-center items-center">
-                        <i data-lucide="shield" class="text-green-500 mb-2 w-6 h-6"></i>
-                        <h3 class="text-xs font-bold text-slate-500 uppercase">Secured Vaults</h3>
-                        <p class="text-2xl font-black text-green-700" id="stat-secured">0</p>
-                    </div>
                     <div class="bg-purple-50 p-4 rounded border border-purple-200 flex flex-col justify-center items-center">
                         <i data-lucide="swords" class="text-purple-500 mb-2 w-6 h-6"></i>
-                        <h3 class="text-xs font-bold text-slate-500 uppercase">Clans Joined</h3>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase">Saved Clans</h3>
                         <p class="text-2xl font-black text-purple-700" id="stat-clans">0</p>
                     </div>
-                    <div class="bg-orange-50 p-4 rounded border border-orange-200 flex flex-col justify-center items-center">
-                        <i data-lucide="mail" class="text-orange-500 mb-2 w-6 h-6"></i>
-                        <h3 class="text-xs font-bold text-slate-500 uppercase">Emails Linked</h3>
-                        <p class="text-2xl font-black text-orange-700" id="stat-emails">0</p>
+                    <div class="bg-amber-50 p-4 rounded border border-amber-200 flex flex-col justify-center items-center">
+                        <i data-lucide="store" class="text-amber-500 mb-2 w-6 h-6"></i>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase">Market Listings</h3>
+                        <p class="text-2xl font-black text-amber-700" id="stat-market">0</p>
                     </div>
-                </div>
-
-                <div id="empty-state" class="bg-slate-100 border-2 border-dashed border-slate-300 rounded p-8 text-center mt-8">
-                    <i data-lucide="database" class="mx-auto text-slate-400 mb-2 w-8 h-8"></i>
-                    <p class="text-slate-600 font-semibold text-sm">Database is empty.</p>
-                    <p class="text-slate-500 text-xs mt-1 mb-4">Add your first account to see details here.</p>
-                    <button onclick="openForm()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 inline-flex items-center gap-2">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Account
-                    </button>
+                    <div class="bg-green-50 p-4 rounded border border-green-200 flex flex-col justify-center items-center">
+                        <i data-lucide="shield-check" class="text-green-500 mb-2 w-6 h-6"></i>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase">Secured SCIDs</h3>
+                        <p class="text-2xl font-black text-green-700" id="stat-secured">0</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- 2. FORM TAB -->
+            <!-- 2. ACCOUNT FORM TAB -->
             <div id="tab-form" class="tab-section hidden animate-slide-up">
-                <div class="bg-white rounded border border-slate-200 shadow-sm text-sm">
+                <div class="bg-white rounded border border-slate-200 shadow-sm text-sm mb-10">
                     <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center no-print">
                         <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2" id="form-title">
                             <i data-lucide="file-text" class="text-blue-600 w-5 h-5"></i> Register New Account
                         </h2>
-                        <span class="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded font-semibold">All fields optional</span>
                     </div>
 
                     <form id="account-form" onsubmit="saveAccount(event)" class="p-4 space-y-4">
                         <input type="hidden" id="f_id">
                         
+                        <!-- Acquisition Box (Naya Feature: Personal / Bought / Sold) -->
+                        <div class="border border-indigo-200 rounded overflow-hidden shadow-sm">
+                            <div class="bg-indigo-100 px-3 py-2 font-bold text-indigo-900 text-xs uppercase tracking-wider border-b border-indigo-200 flex justify-between items-center">
+                                <span class="flex items-center gap-2"><i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Ownership Status</span>
+                                <select id="f_acqType" onchange="toggleAcquisitionFields('f')" class="p-1 rounded outline-none border border-indigo-300 font-bold bg-white text-xs">
+                                    <option value="none">Select Status...</option>
+                                    <option value="personal">Personal Account</option>
+                                    <option value="bought">Bought (Purchased)</option>
+                                    <option value="sold">Sold (Dispatched)</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Dynamic Fields Container -->
+                            <div id="f_acqContainer_personal" class="hidden p-3 bg-indigo-50/50 grid grid-cols-2 gap-3 border-b border-indigo-100">
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Since When (Year/Month)</label><input type="text" id="f_acq_personal_since" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="e.g. 2018"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Main Device Used (Optional)</label><input type="text" id="f_acq_personal_device" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="e.g. iPhone 13"></div>
+                            </div>
+
+                            <div id="f_acqContainer_bought" class="hidden p-3 bg-red-50/50 grid grid-cols-2 md:grid-cols-5 gap-3 border-b border-indigo-100">
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Platform (WhatsApp/Telegram)</label><input type="text" id="f_acq_bought_platform" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="Platform"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Buy Price (₹/$)</label><input type="number" id="f_acq_bought_price" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none font-bold text-red-600" placeholder="0"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Date of Purchase</label><input type="date" id="f_acq_bought_date" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Seller Name</label><input type="text" id="f_acq_bought_name" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="Name"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Seller Contact / ID</label><input type="text" id="f_acq_bought_contact" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="Phone / TG ID"></div>
+                            </div>
+
+                            <div id="f_acqContainer_sold" class="hidden p-3 bg-green-50/50 grid grid-cols-2 md:grid-cols-5 gap-3 border-b border-indigo-100">
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Platform Sold On</label><input type="text" id="f_acq_sold_platform" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="Platform"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sold Price (₹/$)</label><input type="number" id="f_acq_sold_price" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none font-bold text-green-600" placeholder="0"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Date of Sale</label><input type="date" id="f_acq_sold_date" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Buyer Name</label><input type="text" id="f_acq_sold_name" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="Name"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Buyer Contact / ID</label><input type="text" id="f_acq_sold_contact" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="Phone / TG ID"></div>
+                            </div>
+                        </div>
+
                         <!-- Identity Profile Box -->
                         <div class="border border-blue-200 rounded overflow-hidden">
                             <div class="bg-blue-100 px-3 py-1.5 font-bold text-blue-900 text-xs uppercase tracking-wider border-b border-blue-200 flex items-center gap-2">
@@ -155,22 +205,33 @@
                             </div>
                             <div class="p-3 bg-white grid grid-cols-2 md:grid-cols-5 gap-3">
                                 <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Player Name</label><input type="text" id="f_playerName" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 font-semibold" placeholder="Account Name"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tag</label><input type="text" id="f_playerTag" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 font-mono" placeholder="#TAG"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Town Hall</label><input type="number" id="f_townHall" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 text-center" placeholder="TH Lv"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Exp Level</label><input type="number" id="f_expLevel" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 text-center" placeholder="Lv"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tag (Auto Caps)</label><input type="text" id="f_playerTag" oninput="this.value = this.value.toUpperCase()" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 font-mono auto-caps" placeholder="#TAG"></div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Town Hall</label>
+                                    <select id="f_townHall" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 text-center select-th"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Exp Level</label>
+                                    <select id="f_expLevel" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-blue-500 text-center select-1-300"></select>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Clan Details Box -->
                         <div class="border border-purple-200 rounded overflow-hidden">
                             <div class="bg-purple-100 px-3 py-1.5 font-bold text-purple-900 text-xs uppercase tracking-wider border-b border-purple-200 flex items-center gap-2">
-                                <i data-lucide="swords" class="w-3.5 h-3.5"></i> Clan Details
+                                <i data-lucide="swords" class="w-3.5 h-3.5"></i> In-Game Clan Details
                             </div>
                             <div class="p-3 bg-white grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <div class="col-span-2 md:col-span-1"><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Clan Name</label><input type="text" id="f_clanName" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500" placeholder="Clan Name"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Clan Tag</label><input type="text" id="f_clanTag" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500 font-mono" placeholder="#TAG"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Role</label><input type="text" id="f_clanRole" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500" placeholder="e.g. Leader"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level</label><input type="number" id="f_clanLevel" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500 text-center" placeholder="Lv"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Clan Tag</label><input type="text" id="f_clanTag" oninput="this.value = this.value.toUpperCase()" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500 font-mono auto-caps" placeholder="#TAG"></div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Role</label>
+                                    <select id="f_clanRole" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500 text-center">
+                                        <option value="">Select...</option><option value="Member">Member</option><option value="Elder">Elder</option><option value="Co-Leader">Co-Leader</option><option value="Leader">Leader</option>
+                                    </select>
+                                </div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Clan Level</label><select id="f_clanLevel" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500 text-center select-1-50"></select></div>
                             </div>
                         </div>
 
@@ -179,12 +240,12 @@
                             <div class="bg-emerald-100 px-3 py-1.5 font-bold text-emerald-900 text-xs uppercase tracking-wider border-b border-emerald-200 flex items-center gap-2">
                                 <i data-lucide="layers" class="w-3.5 h-3.5"></i> Progression & Heroes
                             </div>
-                            <div class="p-3 bg-white grid grid-cols-2 md:grid-cols-6 gap-3">
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Barb. King</label><input type="number" id="f_heroKing" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center" placeholder="Lv"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Archer Qn.</label><input type="number" id="f_heroQueen" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center" placeholder="Lv"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Warden</label><input type="number" id="f_heroWarden" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center" placeholder="Lv"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Champion</label><input type="number" id="f_heroChampion" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center" placeholder="Lv"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">B. Hall</label><input type="number" id="f_builderHall" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center" placeholder="BH Lv"></div>
+                            <div class="p-3 bg-white grid grid-cols-3 md:grid-cols-6 gap-3">
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Barb. King</label><select id="f_heroKing" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center select-hero"></select></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Archer Qn.</label><select id="f_heroQueen" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center select-hero"></select></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Warden</label><select id="f_heroWarden" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center select-hero"></select></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Champion</label><select id="f_heroChampion" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center select-hero"></select></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">B. Hall</label><select id="f_builderHall" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center select-bh"></select></div>
                                 <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Gems</label><input type="number" id="f_gems" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-emerald-500 text-center text-emerald-700 font-bold" placeholder="0"></div>
                             </div>
                         </div>
@@ -211,15 +272,15 @@
                         <div class="border border-red-200 rounded overflow-hidden">
                             <div class="bg-red-100 px-3 py-1.5 font-bold text-red-900 text-xs uppercase tracking-wider border-b border-red-200 flex justify-between items-center">
                                 <div class="flex items-center gap-2"><i data-lucide="shield" class="w-3.5 h-3.5"></i> Security & Protection</div>
-                                <div class="flex items-center gap-2 text-[10px]">SCID Status: <select id="f_supercellId" class="p-0.5 rounded outline-none border border-red-300 font-bold bg-white"><option value="">Select</option><option value="Connected">Connected</option><option value="Pending">Pending</option></select></div>
+                                <div class="flex items-center gap-2 text-[10px]">SCID Status: <select id="f_supercellId" class="p-0.5 rounded outline-none border border-red-300 font-bold bg-white"><option value="">Select</option><option value="Connected">Connected</option><option value="Pending">Pending</option><option value="Disconnected">Disconnected</option></select></div>
                             </div>
                             <div class="p-3 bg-white grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="md:col-span-2">
                                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Protection Codes (2FA)</label>
                                     <div class="grid grid-cols-3 gap-2">
-                                        <input type="text" id="f_code0" class="border border-slate-300 p-1.5 rounded text-center font-mono text-sm tracking-widest outline-none focus:border-red-500 uppercase bg-slate-50" placeholder="XXXX">
-                                        <input type="text" id="f_code1" class="border border-slate-300 p-1.5 rounded text-center font-mono text-sm tracking-widest outline-none focus:border-red-500 uppercase bg-slate-50" placeholder="XXXX">
-                                        <input type="text" id="f_code2" class="border border-slate-300 p-1.5 rounded text-center font-mono text-sm tracking-widest outline-none focus:border-red-500 uppercase bg-slate-50" placeholder="XXXX">
+                                        <input type="text" id="f_code0" class="border border-slate-300 p-1.5 rounded text-center font-mono text-sm tracking-widest outline-none focus:border-red-500 auto-caps bg-slate-50" placeholder="XXXX" oninput="this.value = this.value.toUpperCase()">
+                                        <input type="text" id="f_code1" class="border border-slate-300 p-1.5 rounded text-center font-mono text-sm tracking-widest outline-none focus:border-red-500 auto-caps bg-slate-50" placeholder="XXXX" oninput="this.value = this.value.toUpperCase()">
+                                        <input type="text" id="f_code2" class="border border-slate-300 p-1.5 rounded text-center font-mono text-sm tracking-widest outline-none focus:border-red-500 auto-caps bg-slate-50" placeholder="XXXX" oninput="this.value = this.value.toUpperCase()">
                                     </div>
                                 </div>
                                 <div>
@@ -230,25 +291,28 @@
                         </div>
 
                         <!-- Form Actions -->
-                        <div class="flex justify-end gap-3 pt-2 no-print">
+                        <div class="flex justify-end gap-3 pt-2 no-print pb-4">
                             <button type="button" onclick="switchTab('list')" class="px-4 py-1.5 bg-slate-100 border border-slate-300 text-slate-700 rounded font-semibold hover:bg-slate-200 text-sm">Cancel</button>
                             <button type="submit" class="px-4 py-1.5 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 flex items-center gap-2 text-sm shadow-sm">
-                                <i data-lucide="save" class="w-4 h-4"></i> Save Data
+                                <i data-lucide="save" class="w-4 h-4"></i> Save Account
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- 3. LIST TAB -->
+            <!-- 3. ACCOUNT LIST TAB -->
             <div id="tab-list" class="tab-section hidden animate-slide-up">
                 <div class="bg-white rounded border border-slate-200 shadow-sm overflow-hidden text-sm">
-                    <div class="bg-slate-50 p-3 border-b border-slate-200 flex justify-between items-center gap-4 no-print">
-                        <div class="relative flex-1 max-w-sm">
+                    <div class="bg-slate-50 p-3 border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 no-print">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2 hidden md:flex">
+                            <i data-lucide="users" class="text-blue-600 w-5 h-5"></i> Account Registry
+                        </h2>
+                        <div class="relative flex-1 max-w-sm w-full">
                             <i data-lucide="search" class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                            <input type="text" id="search-input" onkeyup="renderList()" placeholder="Search names, tags..." class="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded text-sm outline-none focus:border-blue-500">
+                            <input type="text" id="search-input" onkeyup="renderList()" placeholder="Search accounts..." class="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded text-sm outline-none focus:border-blue-500">
                         </div>
-                        <button onclick="handlePrint('portrait')" class="flex items-center gap-1 bg-white border border-slate-300 px-3 py-1.5 rounded font-bold text-slate-700 hover:bg-slate-100 text-xs">
+                        <button onclick="handlePrint('portrait')" class="flex w-full md:w-auto justify-center items-center gap-1 bg-white border border-slate-300 px-3 py-1.5 rounded font-bold text-slate-700 hover:bg-slate-100 text-xs">
                             <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print List
                         </button>
                     </div>
@@ -259,6 +323,7 @@
                                 <tr class="bg-slate-800 text-white text-[10px] uppercase tracking-wider">
                                     <th class="p-2 text-center w-10">#</th>
                                     <th class="p-2 text-left">Account</th>
+                                    <th class="p-2 text-center">Status</th>
                                     <th class="p-2 text-center">TH</th>
                                     <th class="p-2 text-left">Clan</th>
                                     <th class="p-2 text-left">Email</th>
@@ -273,19 +338,213 @@
                 </div>
             </div>
 
-            <!-- 4. EXCEL VIEW TAB -->
+            <!-- 4. MY CLANS TAB (New Feature) -->
+            <div id="tab-clans" class="tab-section hidden animate-slide-up">
+                <!-- Clan List View -->
+                <div id="clans-list-view" class="bg-white rounded border border-slate-200 shadow-sm overflow-hidden text-sm">
+                    <div class="bg-slate-50 p-3 border-b border-slate-200 flex justify-between items-center gap-4 no-print">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="swords" class="text-purple-600 w-5 h-5"></i> My Clans Registry
+                        </h2>
+                        <button onclick="openClanForm()" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-purple-700 flex items-center gap-1">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Clan
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-purple-900 text-white text-[10px] uppercase tracking-wider">
+                                    <th class="p-2 text-left pl-4">Clan Details</th>
+                                    <th class="p-2 text-center">Level</th>
+                                    <th class="p-2 text-center">League</th>
+                                    <th class="p-2 text-center">Status (Bought/Sold)</th>
+                                    <th class="p-2 text-center no-print">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clans-body" class="divide-y divide-slate-100 bg-white">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Clan Form View -->
+                <div id="clans-form-view" class="hidden bg-white rounded border border-slate-200 shadow-sm text-sm">
+                    <div class="bg-purple-50 p-4 border-b border-purple-200 flex justify-between items-center no-print">
+                        <h2 class="text-lg font-bold text-purple-900 flex items-center gap-2" id="clan-form-title">
+                            Register New Clan
+                        </h2>
+                    </div>
+                    <form id="clan-form" onsubmit="saveClan(event)" class="p-4 space-y-4">
+                        <input type="hidden" id="c_id">
+                        
+                        <!-- Clan Acquisition (Same logic as accounts) -->
+                        <div class="border border-purple-200 rounded overflow-hidden shadow-sm">
+                            <div class="bg-purple-100 px-3 py-2 font-bold text-purple-900 text-xs uppercase tracking-wider border-b border-purple-200 flex justify-between items-center">
+                                <span>Ownership Status</span>
+                                <select id="c_acqType" onchange="toggleAcquisitionFields('c')" class="p-1 rounded outline-none border border-purple-300 font-bold bg-white text-xs">
+                                    <option value="none">Select Status...</option>
+                                    <option value="personal">Personal Clan</option>
+                                    <option value="bought">Bought (Purchased)</option>
+                                    <option value="sold">Sold (Dispatched)</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Dynamic Fields Container for Clan -->
+                            <div id="c_acqContainer_personal" class="hidden p-3 bg-purple-50/50 grid grid-cols-2 gap-3 border-b border-purple-100">
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Created/Owned Since</label><input type="text" id="c_acq_personal_since" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="e.g. 2018"></div>
+                            </div>
+                            <div id="c_acqContainer_bought" class="hidden p-3 bg-red-50/50 grid grid-cols-2 md:grid-cols-5 gap-3 border-b border-purple-100">
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Platform</label><input type="text" id="c_acq_bought_platform" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="Platform"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Buy Price</label><input type="number" id="c_acq_bought_price" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none font-bold text-red-600"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Date</label><input type="date" id="c_acq_bought_date" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Seller Name</label><input type="text" id="c_acq_bought_name" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Contact</label><input type="text" id="c_acq_bought_contact" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none"></div>
+                            </div>
+                            <div id="c_acqContainer_sold" class="hidden p-3 bg-green-50/50 grid grid-cols-2 md:grid-cols-5 gap-3 border-b border-purple-100">
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Platform</label><input type="text" id="c_acq_sold_platform" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none" placeholder="Platform"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sold Price</label><input type="number" id="c_acq_sold_price" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none font-bold text-green-600"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Date</label><input type="date" id="c_acq_sold_date" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Buyer Name</label><input type="text" id="c_acq_sold_name" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Contact</label><input type="text" id="c_acq_sold_contact" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none"></div>
+                            </div>
+                        </div>
+
+                        <!-- Core Clan Data -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 border border-slate-200 rounded">
+                            <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Clan Name</label><input type="text" id="c_name" required class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500 font-bold"></div>
+                            <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Clan Tag</label><input type="text" id="c_tag" required oninput="this.value = this.value.toUpperCase()" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none focus:border-purple-500 font-mono auto-caps" placeholder="#"></div>
+                            
+                            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level</label><select id="c_level" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none select-1-50"></select></div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">CWL League</label>
+                                <select id="c_league" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none">
+                                    <option value="Unranked">Unranked</option>
+                                    <option value="Bronze 3">Bronze 3</option><option value="Bronze 2">Bronze 2</option><option value="Bronze 1">Bronze 1</option>
+                                    <option value="Silver 3">Silver 3</option><option value="Silver 2">Silver 2</option><option value="Silver 1">Silver 1</option>
+                                    <option value="Gold 3">Gold 3</option><option value="Gold 2">Gold 2</option><option value="Gold 1">Gold 1</option>
+                                    <option value="Crystal 3">Crystal 3</option><option value="Crystal 2">Crystal 2</option><option value="Crystal 1">Crystal 1</option>
+                                    <option value="Master 3">Master 3</option><option value="Master 2">Master 2</option><option value="Master 1">Master 1</option>
+                                    <option value="Champion 3">Champion 3</option><option value="Champion 2">Champion 2</option><option value="Champion 1">Champion 1</option>
+                                </select>
+                            </div>
+                            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">War Wins</label><input type="number" id="c_warWins" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Capital Hall</label><select id="c_capitalHall" class="w-full border border-slate-300 p-1.5 text-sm rounded outline-none select-1-10"></select></div>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-2">
+                            <button type="button" onclick="closeClanForm()" class="px-4 py-1.5 bg-slate-100 border border-slate-300 text-slate-700 rounded font-semibold text-sm">Cancel</button>
+                            <button type="submit" class="px-4 py-1.5 bg-purple-600 text-white rounded font-bold hover:bg-purple-700 text-sm">Save Clan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 5. MARKET STORE TAB (New Feature - Amazon Style) -->
+            <div id="tab-market" class="tab-section hidden animate-slide-up">
+                <div class="flex justify-between items-center mb-4 no-print">
+                    <div>
+                        <h2 class="text-2xl font-black text-amber-900 tracking-tight">Marketplace</h2>
+                        <p class="text-xs text-slate-600">List your accounts & clans for sale here.</p>
+                    </div>
+                    <button onclick="openMarketForm()" class="bg-amber-600 text-white px-4 py-2 rounded font-bold hover:bg-amber-700 shadow flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Create Listing
+                    </button>
+                </div>
+
+                <!-- Market Grid (Amazon Style Cards) -->
+                <div id="market-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 no-print">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- Market Form (Hidden by default) -->
+                <div id="market-form-container" class="hidden bg-white p-6 rounded-xl shadow-lg border border-slate-200 mt-4 no-print max-w-2xl mx-auto">
+                    <h3 class="text-xl font-bold mb-4" id="market-form-title">New Listing</h3>
+                    <form id="market-form" onsubmit="saveMarketItem(event)" class="space-y-4">
+                        <input type="hidden" id="m_id">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Ad Title (Attract Buyers)</label>
+                                <input type="text" id="m_title" required class="w-full border border-slate-300 p-2 rounded outline-none focus:border-amber-500 font-bold" placeholder="e.g. MAX TH15 | 10k Gems | Safe">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Item Type</label>
+                                <select id="m_type" class="w-full border border-slate-300 p-2 rounded outline-none focus:border-amber-500">
+                                    <option value="Account">Account</option>
+                                    <option value="Clan">Clan</option>
+                                    <option value="Combo">Combo (Acc + Clan)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Price</label>
+                                <input type="text" id="m_price" required class="w-full border border-slate-300 p-2 rounded outline-none focus:border-amber-500 font-bold text-green-700" placeholder="e.g. $150 or ₹10000">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Description / Key Features</label>
+                                <textarea id="m_desc" rows="4" class="w-full border border-slate-300 p-2 rounded outline-none focus:border-amber-500 text-sm resize-none" placeholder="Details about heroes, skins, war stars, etc."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Status</label>
+                                <select id="m_status" class="w-full border border-slate-300 p-2 rounded outline-none font-bold">
+                                    <option value="Available" class="text-green-600">Available</option>
+                                    <option value="Hold" class="text-amber-600">On Hold / Reserved</option>
+                                    <option value="Sold" class="text-red-600">Sold Out</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Link to source ID (Optional)</label>
+                                <input type="text" id="m_sourceId" class="w-full border border-slate-300 p-2 rounded outline-none text-sm" placeholder="Paste internal Acc/Clan ID if any">
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="closeMarketForm()" class="px-4 py-2 bg-slate-100 rounded font-semibold text-slate-600">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-amber-600 text-white rounded font-bold hover:bg-amber-700">Publish Listing</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Market Print Ad View (For taking screenshots/PDFs) -->
+                <div id="market-print-view" class="hidden bg-white p-8 max-w-3xl mx-auto shadow-2xl relative market-print-ad mt-4 print:block print:mt-0">
+                    <button onclick="closeMarketPrint()" class="absolute top-2 right-2 text-slate-400 hover:text-red-500 no-print"><i data-lucide="x-circle" class="w-6 h-6"></i></button>
+                    <button onclick="window.print()" class="absolute top-2 right-12 bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold no-print shadow">Save PDF / Print</button>
+                    
+                    <div class="border-b-4 border-amber-500 pb-4 mb-6 flex justify-between items-end">
+                        <div>
+                            <div class="text-[10px] font-black tracking-widest text-amber-600 uppercase mb-1" id="mp_type">ACCOUNT FOR SALE</div>
+                            <h1 class="text-3xl font-black text-slate-900 leading-tight" id="mp_title">Listing Title Here</h1>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] font-bold text-slate-500 uppercase">Asking Price</div>
+                            <div class="text-3xl font-black text-green-600" id="mp_price">$0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-6 rounded-lg border border-slate-200 mb-6">
+                        <h3 class="text-sm font-bold text-slate-800 uppercase mb-3 border-b border-slate-200 pb-2">Item Specifications & Details</h3>
+                        <div id="mp_desc" class="whitespace-pre-wrap text-slate-700 text-sm font-medium leading-relaxed"></div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mt-8 pt-4 border-t border-slate-200">
+                        <div class="text-xs font-bold text-slate-400">Verified Listing by CoC Vault Pro</div>
+                        <div id="mp_status_badge" class="px-4 py-1.5 rounded-full font-black text-sm uppercase tracking-wider">AVAILABLE</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. EXCEL VIEW TAB (Enhanced Print Layout) -->
             <div id="tab-excel" class="tab-section hidden animate-slide-up">
                 <div class="bg-white border border-slate-300 rounded shadow-sm flex flex-col h-[85vh] print-auto-height">
                     <div class="bg-slate-100 p-2 border-b border-slate-300 flex justify-between items-center no-print shrink-0">
                         <h2 class="text-sm font-extrabold text-slate-800 flex items-center gap-2">
                             <i data-lucide="table" class="text-emerald-600 w-4 h-4"></i> Master Data Register
                         </h2>
-                        <button onclick="handlePrint('landscape')" class="flex items-center gap-1 bg-white border border-slate-300 px-2 py-1 rounded text-xs font-bold text-slate-700 hover:bg-slate-200">
-                            <i data-lucide="printer" class="w-3 h-3"></i> Print Landscape
+                        <button onclick="handlePrint('landscape')" class="flex items-center gap-1 bg-indigo-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-indigo-700 shadow">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Force Landscape Print
                         </button>
                     </div>
-                    <div class="overflow-auto flex-1 custom-scrollbar">
-                        <table class="border-collapse min-w-max text-[10px] sm:text-xs w-full">
+                    <!-- Added specific print class to allow table shrinking -->
+                    <div class="overflow-auto flex-1 custom-scrollbar w-full">
+                        <table class="border-collapse w-full min-w-max text-[10px] sm:text-[11px]">
                             <thead class="sticky top-0 z-10 shadow-sm" id="excel-head">
                                 <!-- Populated dynamically -->
                             </thead>
@@ -297,7 +556,7 @@
                 </div>
             </div>
 
-            <!-- 5. CUSTOM PRINT TAB -->
+            <!-- 7. CUSTOM PRINT TAB -->
             <div id="tab-customPrint" class="tab-section hidden animate-slide-up">
                 <div class="bg-white border border-slate-200 rounded shadow-sm flex flex-col h-[85vh] print-auto-height">
                     <div class="p-4 border-b border-slate-300 bg-slate-50 no-print shrink-0">
@@ -308,17 +567,14 @@
                             <div class="flex gap-2">
                                 <button onclick="setAllCustomColumns(true)" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 text-xs font-bold rounded hover:bg-slate-100">Select All</button>
                                 <button onclick="setAllCustomColumns(false)" class="px-3 py-1 bg-white border border-slate-300 text-slate-600 text-xs font-bold rounded hover:bg-slate-100">Clear All</button>
-                                <button onclick="handlePrint('landscape')" class="px-4 py-1 bg-indigo-600 text-white text-sm font-bold rounded hover:bg-indigo-700 shadow-sm flex items-center gap-2">
-                                    <i data-lucide="printer" class="w-4 h-4"></i> Print Custom Report
+                                <button onclick="handlePrint('landscape')" class="px-4 py-1 bg-indigo-600 text-white text-sm font-bold rounded hover:bg-indigo-700 shadow flex items-center gap-2">
+                                    <i data-lucide="printer" class="w-4 h-4"></i> Print
                                 </button>
                             </div>
                         </div>
-                        <p class="text-xs text-slate-500 mb-3 font-semibold uppercase tracking-wider">Select columns to include:</p>
-                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="custom-checkboxes">
-                            <!-- Populated dynamically -->
-                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="custom-checkboxes"></div>
                     </div>
-                    <div class="overflow-auto flex-1 p-4 bg-white custom-scrollbar">
+                    <div class="overflow-auto flex-1 p-4 bg-white custom-scrollbar w-full">
                         <div class="mb-4 text-center hidden print:block">
                             <h1 class="text-xl font-bold text-slate-900 uppercase">Custom Registry Report</h1>
                             <p class="text-xs text-slate-500" id="print-date"></p>
@@ -331,11 +587,11 @@
                 </div>
             </div>
 
-            <!-- 6. DETAIL VIEW TAB -->
+            <!-- 8. DETAIL VIEW TAB -->
             <div id="tab-detail" class="tab-section hidden animate-slide-up">
                 <div class="bg-white rounded border border-slate-300 shadow-sm text-sm print:border-none print:shadow-none">
                     <div class="bg-slate-100 p-3 border-b border-slate-300 flex justify-between items-center no-print">
-                        <button onclick="switchTab('list')" class="text-slate-600 hover:text-blue-600 font-bold text-xs">← Back</button>
+                        <button onclick="switchTab('list')" class="text-slate-600 hover:text-blue-600 font-bold text-xs flex items-center gap-1"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
                         <div class="flex gap-2">
                             <button onclick="handlePrint('portrait')" class="bg-white border border-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-bold hover:bg-slate-200">Print</button>
                             <button onclick="editCurrentAccount()" class="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1 rounded text-xs font-bold hover:bg-blue-100">Edit</button>
@@ -353,121 +609,181 @@
 
     <!-- JavaScript For App Logic -->
     <script>
-        // Data State variables (Hindi logic comment check)
-        // Data aur state store karne ke liye variables
+        // Data State Variables
         let accounts = [];
+        let clans = [];
+        let marketItems = [];
         let currentAccountId = null;
         
-        // Custom Print Column Configuration
+        // Print Columns
         const defaultPrintColumns = {
             playerName: { label: 'Player Name', checked: true, group: 'Identity' },
             playerTag: { label: 'Tag', checked: true, group: 'Identity' },
             townHall: { label: 'TH', checked: true, group: 'Identity' },
-            expLevel: { label: 'Exp', checked: false, group: 'Identity' },
+            acqType: { label: 'Status (Buy/Sell)', checked: true, group: 'Identity' },
             clanName: { label: 'Clan Name', checked: true, group: 'Clan' },
-            clanTag: { label: 'Clan Tag', checked: false, group: 'Clan' },
             clanRole: { label: 'Role', checked: false, group: 'Clan' },
-            clanLevel: { label: 'Level', checked: false, group: 'Clan' },
-            oldEmail: { label: 'Old Email', checked: false, group: 'Email' },
             currentEmail: { label: 'Current Email', checked: true, group: 'Email' },
-            currentEmailDate: { label: 'Current Date', checked: false, group: 'Email' },
-            newEmail1: { label: 'New Email 1', checked: false, group: 'Email' },
-            newEmail2: { label: 'New Email 2', checked: false, group: 'Email' },
             king: { label: 'King', checked: false, group: 'Heroes' },
             queen: { label: 'Queen', checked: false, group: 'Heroes' },
             warden: { label: 'Warden', checked: false, group: 'Heroes' },
             champion: { label: 'Champion', checked: false, group: 'Heroes' },
-            builderHall: { label: 'BH', checked: false, group: 'Heroes' },
             gems: { label: 'Gems', checked: false, group: 'Heroes' },
             protectionCodes: { label: 'Protection Codes', checked: false, group: 'Security' },
             supercellId: { label: 'SCID', checked: false, group: 'Security' }
         };
         let printColumns = JSON.parse(JSON.stringify(defaultPrintColumns));
 
-        // Jab page load ho jaye tab ye run karega
+        // Initialization (Jab page load ho)
         document.addEventListener("DOMContentLoaded", () => {
-            // Icons initialize karna
             lucide.createIcons();
             document.getElementById('print-date').innerText = "Date Generated: " + new Date().toLocaleDateString();
             
-            // Local storage se data fetch karna
-            const saved = localStorage.getItem('coc_accounts');
-            if(saved) {
-                try { accounts = JSON.parse(saved); } catch(e){}
-            }
+            // Populate Select Dropdowns (JS se options generate karna taki HTML clean rahe)
+            populateSelects('.select-th', 1, 16, "Select TH...");
+            populateSelects('.select-bh', 1, 10, "Select BH...");
+            populateSelects('.select-hero', 0, 95, "Lv");
+            populateSelects('.select-1-50', 1, 50, "Lv");
+            populateSelects('.select-1-300', 1, 300, "Lv");
+            populateSelects('.select-1-10', 1, 10, "Lv");
+
+            // LocalStorage se data load karna
+            const savedAccs = localStorage.getItem('coc_accounts');
+            const savedClans = localStorage.getItem('coc_clans');
+            const savedMarket = localStorage.getItem('coc_market');
+            
+            if(savedAccs) try { accounts = JSON.parse(savedAccs); } catch(e){}
+            if(savedClans) try { clans = JSON.parse(savedClans); } catch(e){}
+            if(savedMarket) try { marketItems = JSON.parse(savedMarket); } catch(e){}
 
             renderDashboard();
             buildCustomPrintUI();
-            switchTab('home'); // Default tab set karna
+            switchTab('home');
         });
 
-        // LocalStorage me save karna
+        // Dropdown populator helper
+        function populateSelects(selector, min, max, defaultText) {
+            const selects = document.querySelectorAll(selector);
+            let options = `<option value="">${defaultText}</option>`;
+            for(let i = max; i >= min; i--) { // Reverse order (highest first usually preferred)
+                options += `<option value="${i}">${i}</option>`;
+            }
+            selects.forEach(sel => sel.innerHTML = options);
+        }
+
+        // Save to LocalStorage
         function saveToLocal() {
             localStorage.setItem('coc_accounts', JSON.stringify(accounts));
+            localStorage.setItem('coc_clans', JSON.stringify(clans));
+            localStorage.setItem('coc_market', JSON.stringify(marketItems));
             renderDashboard();
         }
 
-        // Yeh function tab switch karega bina kisi CSS takrav ke
+        // Tab Switcher
         function switchTab(tabId) {
-            // Saare sections ko hide (chupana) kar do
-            document.querySelectorAll('.tab-section').forEach(el => {
-                el.classList.add('hidden');
-                el.classList.remove('block');
+            document.querySelectorAll('.tab-section').forEach(el => el.classList.add('hidden', 'block') && el.classList.remove('block'));
+            document.querySelectorAll('#nav-menu button').forEach(btn => {
+                if(btn.id !== 'btn-market') {
+                    btn.className = "w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300";
+                }
             });
+            
+            // Re-apply market button style if deselected
+            const mBtn = document.getElementById('btn-market');
+            if(mBtn) mBtn.className = "w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-amber-400 font-semibold border border-transparent hover:border-amber-900/50 bg-amber-900/10";
 
-            // Nav buttons ke colors reset karna
-            const navButtons = document.querySelectorAll('#nav-menu button');
-            navButtons.forEach(btn => {
-                btn.className = "w-full flex items-center gap-3 p-2.5 rounded transition-colors hover:bg-slate-800 text-slate-300";
-            });
-
-            // Target tab ko show karna
             const activeTab = document.getElementById(`tab-${tabId}`);
             if(activeTab) {
                 activeTab.classList.remove('hidden');
                 activeTab.classList.add('block');
             }
             
-            // Sidebar menu highlight karna
             const activeBtn = document.getElementById(`btn-${tabId}`);
-            if(activeBtn) activeBtn.className = "w-full flex items-center gap-3 p-2.5 rounded transition-colors bg-blue-600 text-white";
+            if(activeBtn && tabId !== 'market') activeBtn.className = "w-full flex items-center gap-3 p-2.5 rounded transition-colors bg-blue-600 text-white shadow";
+            if(activeBtn && tabId === 'market') activeBtn.className = "w-full flex items-center gap-3 p-2.5 rounded transition-colors bg-amber-600 text-white shadow";
 
-            // Zaroorat ke hisaab se pages ko render karna
             if(tabId === 'home') renderDashboard();
             if(tabId === 'list') renderList();
+            if(tabId === 'clans') renderClansList();
+            if(tabId === 'market') renderMarketGrid();
             if(tabId === 'excel') renderExcel();
             if(tabId === 'customPrint') renderCustomPrintTable();
             
             window.scrollTo(0, 0);
         }
 
-        // Print function landscape/portrait settings ke sath
+        // --- Core UI Helpers ---
         function handlePrint(orientation) {
             document.body.classList.remove('print-landscape', 'print-portrait');
             document.body.classList.add(`print-${orientation}`);
             window.print();
         }
 
-        // Clipboard me copy karna
-        function copyText(text) {
-            if(!text) return;
-            const tempInput = document.createElement('input');
-            tempInput.value = text;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-            alert("Copied to clipboard: " + text); 
+        // Form Toggles (Acquisition Fields Show/Hide logic)
+        function toggleAcquisitionFields(prefix) {
+            const type = document.getElementById(`${prefix}_acqType`).value;
+            document.getElementById(`${prefix}_acqContainer_personal`).classList.add('hidden');
+            document.getElementById(`${prefix}_acqContainer_bought`).classList.add('hidden');
+            document.getElementById(`${prefix}_acqContainer_sold`).classList.add('hidden');
+            
+            if(type !== 'none' && document.getElementById(`${prefix}_acqContainer_${type}`)) {
+                document.getElementById(`${prefix}_acqContainer_${type}`).classList.remove('hidden');
+            }
         }
 
-        // Form kholne ka aur clear karne ka logic
+        // Helper function for getting acq details from form
+        function getAcqDetailsFromForm(prefix, type) {
+            let details = {};
+            if (type === 'personal') {
+                details = { since: document.getElementById(`${prefix}_acq_personal_since`).value, device: document.getElementById(`${prefix}_acq_personal_device`)?.value || '' };
+            } else if (type === 'bought') {
+                details = { platform: document.getElementById(`${prefix}_acq_bought_platform`).value, price: document.getElementById(`${prefix}_acq_bought_price`).value, date: document.getElementById(`${prefix}_acq_bought_date`).value, name: document.getElementById(`${prefix}_acq_bought_name`).value, contact: document.getElementById(`${prefix}_acq_bought_contact`).value };
+            } else if (type === 'sold') {
+                details = { platform: document.getElementById(`${prefix}_acq_sold_platform`).value, price: document.getElementById(`${prefix}_acq_sold_price`).value, date: document.getElementById(`${prefix}_acq_sold_date`).value, name: document.getElementById(`${prefix}_acq_sold_name`).value, contact: document.getElementById(`${prefix}_acq_sold_contact`).value };
+            }
+            return details;
+        }
+
+        // Helper function to fill form acq details
+        function fillAcqDetailsToForm(prefix, type, details) {
+            if(!details) return;
+            if (type === 'personal') {
+                document.getElementById(`${prefix}_acq_personal_since`).value = details.since || '';
+                if(document.getElementById(`${prefix}_acq_personal_device`)) document.getElementById(`${prefix}_acq_personal_device`).value = details.device || '';
+            } else if (type === 'bought') {
+                document.getElementById(`${prefix}_acq_bought_platform`).value = details.platform || '';
+                document.getElementById(`${prefix}_acq_bought_price`).value = details.price || '';
+                document.getElementById(`${prefix}_acq_bought_date`).value = details.date || '';
+                document.getElementById(`${prefix}_acq_bought_name`).value = details.name || '';
+                document.getElementById(`${prefix}_acq_bought_contact`).value = details.contact || '';
+            } else if (type === 'sold') {
+                document.getElementById(`${prefix}_acq_sold_platform`).value = details.platform || '';
+                document.getElementById(`${prefix}_acq_sold_price`).value = details.price || '';
+                document.getElementById(`${prefix}_acq_sold_date`).value = details.date || '';
+                document.getElementById(`${prefix}_acq_sold_name`).value = details.name || '';
+                document.getElementById(`${prefix}_acq_sold_contact`).value = details.contact || '';
+            }
+        }
+
+
+        // --- ACCOUNT LOGIC ---
         function openForm(acc = null) {
             document.getElementById('account-form').reset();
             document.getElementById('f_id').value = '';
+            document.getElementById('f_acqType').value = 'none';
+            toggleAcquisitionFields('f');
             
-            if (acc) {
-                document.getElementById('form-title').innerHTML = `<i data-lucide="file-text" class="text-blue-600 w-5 h-5"></i> Edit Account`;
+            if (acc && typeof acc === 'object') {
+                document.getElementById('form-title').innerHTML = `<i data-lucide="edit" class="text-blue-600 w-5 h-5"></i> Edit Account`;
                 document.getElementById('f_id').value = acc.id;
+                
+                // Acq details
+                if(acc.acqType) {
+                    document.getElementById('f_acqType').value = acc.acqType;
+                    toggleAcquisitionFields('f');
+                    fillAcqDetailsToForm('f', acc.acqType, acc.acqDetails);
+                }
+
                 document.getElementById('f_playerName').value = acc.playerName || '';
                 document.getElementById('f_playerTag').value = acc.playerTag || '';
                 document.getElementById('f_townHall').value = acc.townHall || '';
@@ -479,10 +795,6 @@
                 document.getElementById('f_oldEmail').value = acc.oldEmail || '';
                 document.getElementById('f_currentEmail').value = acc.currentEmail || '';
                 document.getElementById('f_currentEmailDate').value = acc.currentEmailDate || '';
-                document.getElementById('f_newEmail1').value = acc.newEmail1 || '';
-                document.getElementById('f_newEmail1Date').value = acc.newEmail1Date || '';
-                document.getElementById('f_newEmail2').value = acc.newEmail2 || '';
-                document.getElementById('f_newEmail2Date').value = acc.newEmail2Date || '';
                 
                 document.getElementById('f_heroKing').value = acc.heroes?.king || '';
                 document.getElementById('f_heroQueen').value = acc.heroes?.queen || '';
@@ -503,17 +815,17 @@
             lucide.createIcons();
         }
 
-        // Naya account save karna
         function saveAccount(e) {
             e.preventDefault();
-            const id = document.getElementById('f_id').value || Date.now().toString();
-            let name = document.getElementById('f_playerName').value;
-            if(!name) name = "Unnamed Account";
+            const id = document.getElementById('f_id').value || 'A_' + Date.now().toString();
+            const acqType = document.getElementById('f_acqType').value;
 
             const accountData = {
                 id: id,
                 lastUpdated: new Date().toISOString().split('T')[0],
-                playerName: name,
+                acqType: acqType !== 'none' ? acqType : null,
+                acqDetails: acqType !== 'none' ? getAcqDetailsFromForm('f', acqType) : {},
+                playerName: document.getElementById('f_playerName').value || "Unnamed",
                 playerTag: document.getElementById('f_playerTag').value,
                 townHall: document.getElementById('f_townHall').value,
                 expLevel: document.getElementById('f_expLevel').value,
@@ -524,10 +836,6 @@
                 oldEmail: document.getElementById('f_oldEmail').value,
                 currentEmail: document.getElementById('f_currentEmail').value,
                 currentEmailDate: document.getElementById('f_currentEmailDate').value,
-                newEmail1: document.getElementById('f_newEmail1').value,
-                newEmail1Date: document.getElementById('f_newEmail1Date').value,
-                newEmail2: document.getElementById('f_newEmail2').value,
-                newEmail2Date: document.getElementById('f_newEmail2Date').value,
                 heroes: {
                     king: document.getElementById('f_heroKing').value,
                     queen: document.getElementById('f_heroQueen').value,
@@ -537,69 +845,270 @@
                 builderHall: document.getElementById('f_builderHall').value,
                 gems: document.getElementById('f_gems').value,
                 supercellId: document.getElementById('f_supercellId').value,
-                protectionCodes: [
-                    document.getElementById('f_code0').value,
-                    document.getElementById('f_code1').value,
-                    document.getElementById('f_code2').value
-                ],
+                protectionCodes: [document.getElementById('f_code0').value, document.getElementById('f_code1').value, document.getElementById('f_code2').value],
                 recoveryPhrase: document.getElementById('f_recoveryPhrase').value
             };
 
-            const existingIndex = accounts.findIndex(a => a.id === id);
-            if (existingIndex >= 0) accounts[existingIndex] = accountData;
+            const index = accounts.findIndex(a => a.id === id);
+            if (index >= 0) accounts[index] = accountData;
             else accounts.push(accountData);
 
             saveToLocal();
             switchTab('list');
         }
 
-        // --- Render Functions (UI Update karna) ---
-        function renderDashboard() {
-            document.getElementById('stat-total').innerText = accounts.length;
-            document.getElementById('stat-secured').innerText = accounts.filter(a => a.protectionCodes && a.protectionCodes.some(c=>c.trim() !== '')).length;
-            const uniqueClans = new Set(accounts.map(a => a.clanName).filter(n => n && n.trim() !== ''));
-            document.getElementById('stat-clans').innerText = uniqueClans.size;
-            document.getElementById('stat-emails').innerText = accounts.filter(a => a.currentEmail && a.currentEmail.trim() !== '').length;
-
-            if(accounts.length > 0) document.getElementById('empty-state').style.display = 'none';
-            else document.getElementById('empty-state').style.display = 'block';
-        }
-
         function renderList() {
             const query = document.getElementById('search-input').value.toLowerCase();
             const filtered = accounts.filter(acc => 
-                (acc.playerName || '').toLowerCase().includes(query) ||
-                (acc.playerTag || '').toLowerCase().includes(query) ||
-                (acc.clanName || '').toLowerCase().includes(query)
+                (acc.playerName || '').toLowerCase().includes(query) || (acc.playerTag || '').toLowerCase().includes(query)
             );
-
             const tbody = document.getElementById('list-body');
+            
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500">No data found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 font-semibold">No accounts found.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = filtered.map((acc, index) => `
+            tbody.innerHTML = filtered.map((acc, index) => {
+                let statusBadge = '-';
+                if(acc.acqType === 'bought') statusBadge = '<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Bought</span>';
+                else if(acc.acqType === 'sold') statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Sold</span>';
+                else if(acc.acqType === 'personal') statusBadge = '<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Personal</span>';
+
+                return `
                 <tr class="hover:bg-blue-50 transition-colors bg-white">
                     <td class="p-2 text-center font-bold text-slate-400 text-xs">${index + 1}</td>
-                    <td class="p-2">
-                        <div class="font-bold text-slate-900">${acc.playerName || '-'}</div>
-                        <div class="text-[10px] font-mono text-slate-500 flex items-center gap-1">
-                            ${acc.playerTag || '-'}
-                            ${acc.playerTag ? `<button onclick="copyText('${acc.playerTag}')" class="hover:text-blue-600 no-print" title="Copy Tag"><i data-lucide="copy" class="w-3 h-3"></i></button>` : ''}
-                        </div>
-                    </td>
-                    <td class="p-2 text-center font-bold text-blue-700">${acc.townHall || '-'}</td>
+                    <td class="p-2"><div class="font-bold text-slate-900">${acc.playerName}</div><div class="text-[10px] font-mono text-slate-500">${acc.playerTag || '-'}</div></td>
+                    <td class="p-2 text-center">${statusBadge}</td>
+                    <td class="p-2 text-center font-black text-blue-700">${acc.townHall || '-'}</td>
                     <td class="p-2"><div class="font-semibold text-slate-800 text-xs">${acc.clanName || '-'}</div><div class="text-[10px] text-slate-500">${acc.clanRole || ''}</div></td>
-                    <td class="p-2 text-xs text-slate-600 font-medium truncate max-w-[150px]" title="${acc.currentEmail}">${acc.currentEmail || '-'}</td>
+                    <td class="p-2 text-xs text-slate-600 font-medium truncate max-w-[150px]">${acc.currentEmail || '-'}</td>
                     <td class="p-2 text-center no-print">
-                        <button onclick="viewDetail('${acc.id}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2.5 py-1 rounded text-xs font-bold transition-colors">View</button>
+                        <button onclick="viewDetail('${acc.id}')" class="bg-slate-200 text-slate-700 hover:bg-slate-300 px-2.5 py-1 rounded text-xs font-bold transition-colors">Details</button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
+        }
+
+        // --- CLAN LOGIC (Naya Feature) ---
+        function openClanForm(clan = null) {
+            document.getElementById('clan-form').reset();
+            document.getElementById('c_id').value = '';
+            document.getElementById('c_acqType').value = 'none';
+            toggleAcquisitionFields('c');
             
-            // Icon reload karna DOM change hone ke baad
+            if(clan) {
+                document.getElementById('clan-form-title').innerText = "Edit Clan";
+                document.getElementById('c_id').value = clan.id;
+                if(clan.acqType) {
+                    document.getElementById('c_acqType').value = clan.acqType;
+                    toggleAcquisitionFields('c');
+                    fillAcqDetailsToForm('c', clan.acqType, clan.acqDetails);
+                }
+                document.getElementById('c_name').value = clan.name || '';
+                document.getElementById('c_tag').value = clan.tag || '';
+                document.getElementById('c_level').value = clan.level || '';
+                document.getElementById('c_league').value = clan.league || '';
+                document.getElementById('c_warWins').value = clan.warWins || '';
+                document.getElementById('c_capitalHall').value = clan.capitalHall || '';
+            } else {
+                document.getElementById('clan-form-title').innerText = "Register New Clan";
+            }
+            document.getElementById('clans-list-view').classList.add('hidden');
+            document.getElementById('clans-form-view').classList.remove('hidden');
+        }
+
+        function closeClanForm() {
+            document.getElementById('clans-form-view').classList.add('hidden');
+            document.getElementById('clans-list-view').classList.remove('hidden');
+        }
+
+        function saveClan(e) {
+            e.preventDefault();
+            const id = document.getElementById('c_id').value || 'C_' + Date.now().toString();
+            const acqType = document.getElementById('c_acqType').value;
+            
+            const clanData = {
+                id: id,
+                acqType: acqType !== 'none' ? acqType : null,
+                acqDetails: acqType !== 'none' ? getAcqDetailsFromForm('c', acqType) : {},
+                name: document.getElementById('c_name').value,
+                tag: document.getElementById('c_tag').value,
+                level: document.getElementById('c_level').value,
+                league: document.getElementById('c_league').value,
+                warWins: document.getElementById('c_warWins').value,
+                capitalHall: document.getElementById('c_capitalHall').value
+            };
+
+            const index = clans.findIndex(c => c.id === id);
+            if(index >= 0) clans[index] = clanData; else clans.push(clanData);
+            
+            saveToLocal();
+            closeClanForm();
+            renderClansList();
+        }
+
+        function renderClansList() {
+            const tbody = document.getElementById('clans-body');
+            if(clans.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No clans registered yet.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = clans.map(c => {
+                let statusBadge = '-';
+                if(c.acqType === 'bought') statusBadge = '<span class="text-indigo-600 font-bold text-xs uppercase">Bought</span>';
+                else if(c.acqType === 'sold') statusBadge = '<span class="text-red-600 font-bold text-xs uppercase">Sold</span>';
+                else if(c.acqType === 'personal') statusBadge = '<span class="text-emerald-600 font-bold text-xs uppercase">Personal</span>';
+                
+                return `
+                <tr class="hover:bg-purple-50 transition-colors">
+                    <td class="p-3 pl-4"><div class="font-black text-purple-900 text-base">${c.name}</div><div class="font-mono text-xs text-slate-500">${c.tag}</div></td>
+                    <td class="p-3 text-center font-bold text-lg">${c.level || '-'}</td>
+                    <td class="p-3 text-center font-semibold text-slate-700 text-xs">${c.league || '-'}</td>
+                    <td class="p-3 text-center">${statusBadge}</td>
+                    <td class="p-3 text-center no-print">
+                        <button onclick="editClan('${c.id}')" class="bg-slate-200 px-2 py-1 rounded text-xs font-bold hover:bg-slate-300">Edit</button>
+                        <button onclick="deleteClan('${c.id}')" class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold hover:bg-red-200 ml-1">Del</button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function editClan(id) { const c = clans.find(x => x.id === id); if(c) openClanForm(c); }
+        function deleteClan(id) { if(confirm("Delete this Clan?")) { clans = clans.filter(x => x.id !== id); saveToLocal(); renderClansList(); } }
+
+
+        // --- MARKET LOGIC (Naya Feature) ---
+        function openMarketForm(item = null) {
+            document.getElementById('market-form').reset();
+            document.getElementById('m_id').value = '';
+            document.getElementById('market-grid').classList.add('hidden');
+            document.getElementById('market-form-container').classList.remove('hidden');
+        }
+        function closeMarketForm() {
+            document.getElementById('market-form-container').classList.add('hidden');
+            document.getElementById('market-grid').classList.remove('hidden');
+        }
+        function saveMarketItem(e) {
+            e.preventDefault();
+            const id = document.getElementById('m_id').value || 'M_' + Date.now().toString();
+            const item = {
+                id: id,
+                title: document.getElementById('m_title').value,
+                type: document.getElementById('m_type').value,
+                price: document.getElementById('m_price').value,
+                desc: document.getElementById('m_desc').value,
+                status: document.getElementById('m_status').value,
+                sourceId: document.getElementById('m_sourceId').value,
+                dateAdded: new Date().toISOString().split('T')[0]
+            };
+            const index = marketItems.findIndex(m => m.id === id);
+            if(index >= 0) marketItems[index] = item; else marketItems.push(item);
+            saveToLocal(); closeMarketForm(); renderMarketGrid();
+        }
+
+        function renderMarketGrid() {
+            const grid = document.getElementById('market-grid');
+            if(marketItems.length === 0) {
+                grid.innerHTML = `<div class="col-span-full p-8 text-center bg-white border border-slate-200 rounded-xl text-slate-500 font-semibold">Store is empty. Add items to sell.</div>`;
+                return;
+            }
+            grid.innerHTML = marketItems.map(m => {
+                let sColor = m.status === 'Available' ? 'bg-green-100 text-green-700' : (m.status === 'Sold' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
+                return `
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col relative">
+                    <div class="absolute top-2 right-2 ${sColor} px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">${m.status}</div>
+                    <div class="bg-slate-800 p-4 pt-6 text-center text-white">
+                        <i data-lucide="${m.type === 'Clan' ? 'swords' : (m.type==='Combo' ? 'package' : 'user')}" class="w-10 h-10 mx-auto text-amber-400 mb-2"></i>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-widest">${m.type}</div>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col">
+                        <h3 class="font-black text-slate-900 leading-tight mb-2">${m.title}</h3>
+                        <div class="text-2xl font-black text-green-600 mb-2">${m.price}</div>
+                        <p class="text-xs text-slate-500 line-clamp-2 mb-4 flex-1">${m.desc || 'No description provided.'}</p>
+                        <div class="flex gap-2 mt-auto border-t border-slate-100 pt-3">
+                            <button onclick="openMarketPrint('${m.id}')" class="flex-1 bg-amber-50 text-amber-700 hover:bg-amber-100 py-1.5 rounded text-xs font-bold transition-colors">Show AD</button>
+                            <button onclick="deleteMarketItem('${m.id}')" class="bg-red-50 text-red-500 hover:bg-red-100 px-3 py-1.5 rounded text-xs font-bold"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
             lucide.createIcons();
+        }
+
+        function deleteMarketItem(id) { if(confirm("Remove from market?")) { marketItems = marketItems.filter(x => x.id !== id); saveToLocal(); renderMarketGrid(); } }
+
+        function openMarketPrint(id) {
+            const m = marketItems.find(x => x.id === id);
+            if(!m) return;
+            document.getElementById('mp_type').innerText = `${m.type} FOR SALE`;
+            document.getElementById('mp_title').innerText = m.title;
+            document.getElementById('mp_price').innerText = m.price;
+            document.getElementById('mp_desc').innerText = m.desc;
+            
+            const badge = document.getElementById('mp_status_badge');
+            badge.innerText = m.status;
+            badge.className = `px-4 py-1.5 rounded-full font-black text-sm uppercase tracking-wider ${m.status === 'Available' ? 'bg-green-100 text-green-700' : (m.status === 'Sold' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')}`;
+            
+            document.getElementById('market-grid').classList.add('hidden');
+            document.getElementById('market-print-view').classList.remove('hidden');
+            document.getElementById('market-print-view').classList.add('block');
+        }
+        function closeMarketPrint() {
+            document.getElementById('market-print-view').classList.add('hidden');
+            document.getElementById('market-print-view').classList.remove('block');
+            document.getElementById('market-grid').classList.remove('hidden');
+        }
+
+
+        // --- DETAILS & EXCEL (Updated for new fields) ---
+        function viewDetail(id) {
+            currentAccountId = id;
+            const acc = accounts.find(a => a.id === id);
+            if(!acc) return;
+            
+            let acqHtml = '';
+            if(acc.acqType && acc.acqType !== 'none') {
+                const color = acc.acqType === 'bought' ? 'indigo' : (acc.acqType === 'sold' ? 'red' : 'emerald');
+                const d = acc.acqDetails;
+                acqHtml = `<div class="mb-4 border border-${color}-300 rounded overflow-hidden">
+                    <div class="bg-${color}-100 text-${color}-900 text-[10px] font-bold uppercase p-1.5 text-center tracking-widest border-b border-${color}-300">Status: ${acc.acqType}</div>
+                    <div class="p-3 grid grid-cols-2 gap-2 text-xs bg-${color}-50/30">
+                        ${d.platform ? `<div><span class="font-bold text-slate-500">Platform:</span> ${d.platform}</div>` : ''}
+                        ${d.price ? `<div><span class="font-bold text-slate-500">Price:</span> <span class="font-black text-${color}-700">${d.price}</span></div>` : ''}
+                        ${d.date ? `<div><span class="font-bold text-slate-500">Date:</span> ${d.date}</div>` : ''}
+                        ${d.name ? `<div><span class="font-bold text-slate-500">Person:</span> ${d.name}</div>` : ''}
+                        ${d.since ? `<div><span class="font-bold text-slate-500">Since:</span> ${d.since}</div>` : ''}
+                    </div>
+                </div>`;
+            }
+
+            document.getElementById('detail-content').innerHTML = `
+                <div class="flex justify-between items-end border-b-2 border-slate-800 pb-2 mb-4">
+                    <div><h1 class="text-2xl font-black text-slate-900 uppercase">${acc.playerName}</h1><p class="text-xs font-mono font-bold text-slate-600">${acc.playerTag}</p></div>
+                    <div class="text-right text-xs"><div class="font-bold text-slate-400 uppercase">TH Level</div><div class="font-black text-lg text-blue-800">${acc.townHall || '-'}</div></div>
+                </div>
+                ${acqHtml}
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <table class="w-full text-xs border-collapse border border-slate-400"><tbody><tr><th class="bg-slate-100 border border-slate-400 p-1.5 w-1/3 text-left">Exp Level</th><td class="border border-slate-400 p-1.5 font-bold">${acc.expLevel || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Builder Hall</th><td class="border border-slate-400 p-1.5 font-bold">${acc.builderHall || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Gems</th><td class="border border-slate-400 p-1.5 font-bold text-emerald-700">${acc.gems || '-'}</td></tr></tbody></table>
+                    <table class="w-full text-xs border-collapse border border-slate-400"><tbody><tr><th class="bg-slate-100 border border-slate-400 p-1.5 w-1/3 text-left">Clan Name</th><td class="border border-slate-400 p-1.5 font-bold text-purple-900">${acc.clanName || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Clan Tag</th><td class="border border-slate-400 p-1.5 font-mono">${acc.clanTag || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Role / Lvl</th><td class="border border-slate-400 p-1.5">${acc.clanRole || '-'} / ${acc.clanLevel || '-'}</td></tr></tbody></table>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="border border-slate-400"><div class="bg-slate-800 text-white text-[10px] font-bold uppercase p-1.5 text-center">Hero Levels</div><div class="flex justify-around p-2 text-center bg-slate-50 text-xs"><div><div class="font-bold text-slate-500 text-[10px]">KING</div><div class="font-black">${acc.heroes?.king || '-'}</div></div><div><div class="font-bold text-slate-500 text-[10px]">QUEEN</div><div class="font-black">${acc.heroes?.queen || '-'}</div></div><div><div class="font-bold text-slate-500 text-[10px]">WARDEN</div><div class="font-black">${acc.heroes?.warden || '-'}</div></div><div><div class="font-bold text-slate-500 text-[10px]">CHAMP</div><div class="font-black">${acc.heroes?.champion || '-'}</div></div></div></div>
+                    <div class="border border-red-800"><div class="bg-red-900 text-white text-[10px] font-bold uppercase p-1.5 text-center flex justify-between px-2"><span>Security Codes</span><span>SCID: ${acc.supercellId || '-'}</span></div><div class="flex justify-around p-2 bg-red-50 text-xs font-mono font-bold text-red-900 items-center h-[calc(100%-25px)]">${acc.protectionCodes && acc.protectionCodes.filter(c=>c).length > 0 ? acc.protectionCodes.filter(c=>c).map(code => `<div class="border border-red-300 bg-white px-2 py-1 rounded">${code}</div>`).join('') : '-'}</div></div>
+                </div>
+            `;
+            switchTab('detail');
+        }
+
+        function editCurrentAccount() { const acc = accounts.find(a => a.id === currentAccountId); if(acc) openForm(acc); }
+        function deleteCurrentAccount() { if(confirm("Delete Account Permanently?")) { accounts = accounts.filter(a => a.id !== currentAccountId); saveToLocal(); switchTab('list'); } }
+
+        function renderDashboard() {
+            document.getElementById('stat-total').innerText = accounts.length;
+            document.getElementById('stat-secured').innerText = accounts.filter(a => a.supercellId === 'Connected').length;
+            document.getElementById('stat-clans').innerText = clans.length;
+            document.getElementById('stat-market').innerText = marketItems.filter(m => m.status === 'Available').length;
         }
 
         function renderExcel() {
@@ -608,231 +1117,146 @@
                 <tr class="bg-slate-800 text-white font-bold uppercase tracking-widest text-[9px] text-center border-b border-slate-600">
                     <th class="p-1 border-r border-slate-600 bg-slate-900">#</th>
                     <th class="p-1 border-r border-slate-600 bg-blue-900" colspan="4">Core Identity</th>
+                    <th class="p-1 border-r border-slate-600 bg-indigo-900" colspan="2">Acquisition</th>
                     <th class="p-1 border-r border-slate-600 bg-purple-900" colspan="4">Clan Info</th>
-                    <th class="p-1 border-r border-slate-600 bg-orange-900" colspan="5">Email Directory</th>
-                    <th class="p-1 border-r border-slate-600 bg-emerald-900" colspan="6">Base & Heroes</th>
-                    <th class="p-1 bg-red-900" colspan="4">Security</th>
+                    <th class="p-1 border-r border-slate-600 bg-emerald-900" colspan="5">Base & Heroes</th>
+                    <th class="p-1 bg-red-900" colspan="2">Security</th>
                 </tr>
-                <tr class="bg-slate-100 text-slate-700 font-bold border-b-2 border-slate-400 whitespace-nowrap">
-                    <th class="p-1.5 border-r border-slate-300 bg-slate-200">ID</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-blue-50">Name</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-blue-50">Tag</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-blue-50">TH</th>
-                    <th class="p-1.5 border-r border-slate-400 bg-blue-50">Exp</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-purple-50">Clan Name</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-purple-50">Clan Tag</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-purple-50">Role</th>
-                    <th class="p-1.5 border-r border-slate-400 bg-purple-50">Level</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-orange-50">Old Email</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-orange-50 text-orange-700">Curr Email</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-orange-50">Curr Date</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-orange-50">New Email 1</th>
-                    <th class="p-1.5 border-r border-slate-400 bg-orange-50">New 1 Date</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-emerald-50">BK</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-emerald-50">AQ</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-emerald-50">GW</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-emerald-50">RC</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-emerald-50">BH</th>
-                    <th class="p-1.5 border-r border-slate-400 bg-emerald-50">Gems</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-red-50">Code 1</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-red-50">Code 2</th>
-                    <th class="p-1.5 border-r border-slate-300 bg-red-50">Code 3</th>
-                    <th class="p-1.5 bg-red-50">SCID</th>
+                <tr class="bg-slate-100 text-slate-700 font-bold border-b-2 border-slate-400 whitespace-nowrap text-left">
+                    <th class="p-1.5 border-r border-slate-300 text-center">ID</th>
+                    <th class="p-1.5 border-r border-slate-300">Name</th><th class="p-1.5 border-r border-slate-300">Tag</th><th class="p-1.5 border-r border-slate-300 text-center">TH</th><th class="p-1.5 border-r border-slate-400 text-center">Exp</th>
+                    <th class="p-1.5 border-r border-slate-300">Status</th><th class="p-1.5 border-r border-slate-400">Price/Info</th>
+                    <th class="p-1.5 border-r border-slate-300">Clan Name</th><th class="p-1.5 border-r border-slate-300">Clan Tag</th><th class="p-1.5 border-r border-slate-300">Role</th><th class="p-1.5 border-r border-slate-400 text-center">Lvl</th>
+                    <th class="p-1.5 border-r border-slate-300 text-center">BK</th><th class="p-1.5 border-r border-slate-300 text-center">AQ</th><th class="p-1.5 border-r border-slate-300 text-center">GW</th><th class="p-1.5 border-r border-slate-300 text-center">RC</th><th class="p-1.5 border-r border-slate-400 text-center">Gems</th>
+                    <th class="p-1.5 border-r border-slate-300">Curr Email</th><th class="p-1.5">SCID</th>
                 </tr>
             `;
 
             const tbody = document.getElementById('excel-body');
-            if (accounts.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="24" class="p-4 text-center text-slate-500 font-semibold border-b">No data available.</td></tr>`;
-                return;
-            }
+            if (accounts.length === 0) { tbody.innerHTML = `<tr><td colspan="18" class="p-4 text-center text-slate-500">No data available.</td></tr>`; return; }
 
-            tbody.innerHTML = accounts.map((acc, index) => `
-                <tr class="border-b border-slate-200 hover:bg-slate-100 whitespace-nowrap">
+            tbody.innerHTML = accounts.map((acc, index) => {
+                let acqTxt = acc.acqType || '-';
+                let priceInfo = '-';
+                if(acc.acqType === 'bought' || acc.acqType === 'sold') priceInfo = acc.acqDetails?.price || '-';
+                if(acc.acqType === 'personal') priceInfo = 'Since: ' + (acc.acqDetails?.since || '-');
+
+                return `
+                <tr class="border-b border-slate-200 hover:bg-slate-50 whitespace-nowrap">
                     <td class="p-1.5 border-r border-slate-300 text-center font-bold text-slate-500 bg-slate-50">${index + 1}</td>
-                    <td class="p-1.5 border-r border-slate-300 font-bold text-blue-900">${acc.playerName || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 font-mono text-slate-600">${acc.playerTag || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-center font-bold">${acc.townHall || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-400 text-center">${acc.expLevel || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-purple-900 font-semibold">${acc.clanName || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 font-mono text-slate-500">${acc.clanTag || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-slate-600">${acc.clanRole || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-400 text-center">${acc.clanLevel || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-slate-500">${acc.oldEmail || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 font-bold text-orange-700">${acc.currentEmail || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-slate-500">${acc.currentEmailDate || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-slate-500">${acc.newEmail1 || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-400 text-slate-500">${acc.newEmail1Date || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.king || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.queen || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.warden || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.champion || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-center">${acc.builderHall || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-400 text-center font-bold text-emerald-600">${acc.gems || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-center font-mono font-bold text-red-800">${acc.protectionCodes?.[0] || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-center font-mono font-bold text-red-800">${acc.protectionCodes?.[1] || '-'}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-center font-mono font-bold text-red-800">${acc.protectionCodes?.[2] || '-'}</td>
-                    <td class="p-1.5 text-center font-bold text-slate-600">${acc.supercellId || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 font-bold text-blue-900">${acc.playerName || '-'}</td><td class="p-1.5 border-r border-slate-300 font-mono">${acc.playerTag || '-'}</td><td class="p-1.5 border-r border-slate-300 text-center font-bold">${acc.townHall || '-'}</td><td class="p-1.5 border-r border-slate-400 text-center">${acc.expLevel || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 uppercase text-[9px] font-bold">${acqTxt}</td><td class="p-1.5 border-r border-slate-400 text-red-700 font-bold">${priceInfo}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-purple-900 font-semibold">${acc.clanName || '-'}</td><td class="p-1.5 border-r border-slate-300 font-mono">${acc.clanTag || '-'}</td><td class="p-1.5 border-r border-slate-300">${acc.clanRole || '-'}</td><td class="p-1.5 border-r border-slate-400 text-center">${acc.clanLevel || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.king || '-'}</td><td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.queen || '-'}</td><td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.warden || '-'}</td><td class="p-1.5 border-r border-slate-300 text-center font-semibold text-emerald-800">${acc.heroes?.champion || '-'}</td><td class="p-1.5 border-r border-slate-400 text-center font-bold text-emerald-600">${acc.gems || '-'}</td>
+                    <td class="p-1.5 border-r border-slate-300 font-bold text-orange-700 max-w-[150px] truncate">${acc.currentEmail || '-'}</td><td class="p-1.5 text-center font-bold text-slate-600">${acc.supercellId || '-'}</td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
-        // --- Custom Print Logic ---
+        // Custom Print Builder (Minimalistic logic to save space)
         function buildCustomPrintUI() {
-            const container = document.getElementById('custom-checkboxes');
-            const groups = { Identity: 'blue', Clan: 'purple', Email: 'orange', Heroes: 'emerald', Security: 'red' };
-            
             let html = '';
-            for (const [groupName, color] of Object.entries(groups)) {
-                const groupKeys = Object.keys(printColumns).filter(k => printColumns[k].group === groupName);
-                if (groupKeys.length === 0) continue;
-
-                html += `
-                    <div class="space-y-1 bg-white p-2 border border-slate-200 rounded">
-                        <div class="text-[10px] font-bold text-${color}-600 mb-2 uppercase">${groupName}</div>
-                        ${groupKeys.map(key => `
-                            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
-                                <input type="checkbox" onchange="toggleCustomCol('${key}')" ${printColumns[key].checked ? 'checked' : ''} class="accent-indigo-600" /> 
-                                ${printColumns[key].label}
-                            </label>
-                        `).join('')}
-                    </div>
-                `;
+            for (const [key, val] of Object.entries(printColumns)) {
+                html += `<label class="flex items-center gap-2 text-xs cursor-pointer bg-white p-1 border rounded"><input type="checkbox" onchange="printColumns['${key}'].checked = !printColumns['${key}'].checked; renderCustomPrintTable();" ${val.checked?'checked':''} class="accent-indigo-600"/> ${val.label}</label>`;
             }
-            container.innerHTML = html;
+            document.getElementById('custom-checkboxes').innerHTML = html;
         }
-
-        function toggleCustomCol(key) {
-            printColumns[key].checked = !printColumns[key].checked;
-            renderCustomPrintTable();
-        }
-
-        function setAllCustomColumns(val) {
-            Object.keys(printColumns).forEach(k => printColumns[k].checked = val);
-            buildCustomPrintUI();
-            renderCustomPrintTable();
-        }
-
+        function setAllCustomColumns(bool) { Object.values(printColumns).forEach(v => v.checked = bool); buildCustomPrintUI(); renderCustomPrintTable(); }
         function renderCustomPrintTable() {
-            const thead = document.getElementById('custom-thead');
-            const tbody = document.getElementById('custom-tbody');
+            let thead = `<tr class="bg-slate-800 text-white text-xs"><th class="p-2 border">#</th>`, tbody = '';
+            Object.values(printColumns).forEach(v => { if(v.checked) thead += `<th class="p-2 border">${v.label}</th>`; });
+            thead += '</tr>';
             
-            let headHTML = `<tr class="bg-slate-800 text-white font-bold uppercase tracking-wider text-left">
-                <th class="p-2 border border-slate-700 text-center">#</th>`;
-            
-            Object.keys(printColumns).forEach(key => {
-                if(printColumns[key].checked) {
-                    headHTML += `<th class="p-2 border border-slate-700">${printColumns[key].label}</th>`;
-                }
-            });
-            headHTML += `</tr>`;
-            thead.innerHTML = headHTML;
-
-            if (accounts.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="30" class="p-4 text-center text-slate-500 font-semibold border-b border-slate-300">No data available to print.</td></tr>`;
-                return;
-            }
-
-            let bodyHTML = '';
-            accounts.forEach((acc, index) => {
-                bodyHTML += `<tr class="border-b border-slate-300 hover:bg-slate-50 whitespace-nowrap">
-                    <td class="p-2 border border-slate-300 text-center font-bold text-slate-600 bg-slate-50">${index + 1}</td>`;
-                
-                Object.keys(printColumns).forEach(key => {
-                    if(!printColumns[key].checked) return;
-                    
-                    let val = '-';
-                    if(key === 'king' || key === 'queen' || key === 'warden' || key === 'champion') val = acc.heroes?.[key] || '-';
-                    else if(key === 'protectionCodes') val = acc.protectionCodes?.filter(c=>c).join(', ') || '-';
-                    else val = acc[key] || '-';
-
-                    let classes = "p-2 border border-slate-300 ";
-                    if(key === 'playerName') classes += "font-bold text-slate-800";
-                    else if(key === 'playerTag' || key === 'clanTag' || key === 'protectionCodes') classes += "font-mono text-xs";
-                    else if(key === 'townHall' || key === 'expLevel' || key === 'clanLevel' || key === 'gems' || key === 'builderHall') classes += "text-center";
-
-                    bodyHTML += `<td class="${classes}">${val}</td>`;
+            accounts.forEach((a, i) => {
+                tbody += `<tr class="border-b hover:bg-slate-50"><td class="p-2 border text-center font-bold">${i+1}</td>`;
+                Object.keys(printColumns).forEach(k => {
+                    if(printColumns[k].checked) {
+                        let val = '-';
+                        if(['king','queen','warden','champion'].includes(k)) val = a.heroes?.[k] || '-';
+                        else if(k==='protectionCodes') val = a.protectionCodes?.filter(c=>c).join(',') || '-';
+                        else val = a[k] || '-';
+                        tbody += `<td class="p-2 border whitespace-nowrap">${val}</td>`;
+                    }
                 });
-                bodyHTML += `</tr>`;
+                tbody += `</tr>`;
             });
-            tbody.innerHTML = bodyHTML;
+            document.getElementById('custom-thead').innerHTML = thead;
+            document.getElementById('custom-tbody').innerHTML = tbody || `<tr><td colspan="20" class="p-4 text-center">No Data</td></tr>`;
         }
 
-        // --- Detail View Logic ---
-        function viewDetail(id) {
-            currentAccountId = id;
-            const acc = accounts.find(a => a.id === id);
-            if(!acc) return;
 
-            const container = document.getElementById('detail-content');
-            container.innerHTML = `
-                <div class="flex justify-between items-end border-b-2 border-slate-800 pb-2 mb-4">
-                    <div><h1 class="text-2xl font-black text-slate-900 uppercase">${acc.playerName || 'Unnamed'}</h1><p class="text-xs font-mono font-bold text-slate-600">${acc.playerTag || 'No Tag'}</p></div>
-                    <div class="text-right text-xs"><div class="font-bold text-slate-400 uppercase">TH Level</div><div class="font-black text-lg text-blue-800">${acc.townHall || '-'}</div></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <table class="w-full text-xs border-collapse border border-slate-400"><tbody><tr><th class="bg-slate-100 border border-slate-400 p-1.5 w-1/3 text-left">Exp Level</th><td class="border border-slate-400 p-1.5 font-bold">${acc.expLevel || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Builder Hall</th><td class="border border-slate-400 p-1.5 font-bold">${acc.builderHall || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Gems Vault</th><td class="border border-slate-400 p-1.5 font-bold text-emerald-700">${acc.gems || '-'}</td></tr></tbody></table>
-                    <table class="w-full text-xs border-collapse border border-slate-400"><tbody><tr><th class="bg-slate-100 border border-slate-400 p-1.5 w-1/3 text-left">Clan Name</th><td class="border border-slate-400 p-1.5 font-bold text-purple-900">${acc.clanName || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Clan Tag</th><td class="border border-slate-400 p-1.5 font-mono">${acc.clanTag || '-'}</td></tr><tr><th class="bg-slate-100 border border-slate-400 p-1.5 text-left">Role / Lvl</th><td class="border border-slate-400 p-1.5">${acc.clanRole || '-'} / ${acc.clanLevel || '-'}</td></tr></tbody></table>
-                </div>
-                <div class="mb-4 border border-slate-400">
-                    <div class="bg-slate-800 text-white text-[10px] font-bold uppercase p-1.5 text-center">Registered Emails</div>
-                    <table class="w-full text-xs border-collapse text-center"><thead class="bg-slate-100 text-[10px] uppercase text-slate-600"><tr><th class="border border-slate-400 p-1 w-1/4">Old Email</th><th class="border border-slate-400 p-1 w-1/4 text-blue-700">Current Active</th><th class="border border-slate-400 p-1 w-1/4">New / Trf 1</th><th class="border border-slate-400 p-1 w-1/4">New / Trf 2</th></tr></thead><tbody><tr><td class="border border-slate-400 p-1.5 truncate max-w-[100px]">${acc.oldEmail || '-'}</td><td class="border border-slate-400 p-1.5 font-bold text-blue-800 truncate max-w-[100px]">${acc.currentEmail || '-'} <br/><span class="text-[9px] text-slate-500 font-normal">${acc.currentEmailDate || ''}</span></td><td class="border border-slate-400 p-1.5 truncate max-w-[100px]">${acc.newEmail1 || '-'} <br/><span class="text-[9px] text-slate-500 font-normal">${acc.newEmail1Date || ''}</span></td><td class="border border-slate-400 p-1.5 truncate max-w-[100px]">${acc.newEmail2 || '-'} <br/><span class="text-[9px] text-slate-500 font-normal">${acc.newEmail2Date || ''}</span></td></tr></tbody></table>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="border border-slate-400"><div class="bg-slate-800 text-white text-[10px] font-bold uppercase p-1.5 text-center">Hero Levels</div><div class="flex justify-around p-2 text-center bg-slate-50 text-xs"><div><div class="font-bold text-slate-500 text-[10px]">KING</div><div class="font-black text-sm">${acc.heroes?.king || '-'}</div></div><div><div class="font-bold text-slate-500 text-[10px]">QUEEN</div><div class="font-black text-sm">${acc.heroes?.queen || '-'}</div></div><div><div class="font-bold text-slate-500 text-[10px]">WARDEN</div><div class="font-black text-sm">${acc.heroes?.warden || '-'}</div></div><div><div class="font-bold text-slate-500 text-[10px]">CHAMP</div><div class="font-black text-sm">${acc.heroes?.champion || '-'}</div></div></div></div>
-                    <div class="border border-red-800"><div class="bg-red-900 text-white text-[10px] font-bold uppercase p-1.5 text-center flex justify-between px-2"><span>Security Codes</span><span>SCID: ${acc.supercellId || '-'}</span></div><div class="flex justify-around p-2 bg-red-50 text-xs font-mono font-bold text-red-900 items-center h-[calc(100%-25px)]">${acc.protectionCodes && acc.protectionCodes.filter(c=>c).length > 0 ? acc.protectionCodes.filter(c=>c).map(code => `<div class="border border-red-300 bg-white px-2 py-1 rounded">${code}</div>`).join('') : '<span class="text-red-400 italic font-sans text-[10px]">No codes</span>'}</div></div>
-                </div>
-                <div class="mt-8 text-right text-xs"><span class="border-t border-slate-600 pt-1 font-bold">Authorized Sign.</span></div>
-            `;
-            switchTab('detail');
-        }
-
-        function editCurrentAccount() {
-            const acc = accounts.find(a => a.id === currentAccountId);
-            if(acc) openForm(acc);
-        }
-
-        function deleteCurrentAccount() {
-            if(confirm("Delete this account permanently?")) {
-                accounts = accounts.filter(a => a.id !== currentAccountId);
-                saveToLocal();
-                switchTab('list');
-            }
-        }
-
-        // --- Data Import / Export ---
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(accounts, null, 2));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", `CoC_Data_${new Date().toISOString().split('T')[0]}.json`);
-            document.body.appendChild(dlAnchorElem);
-            dlAnchorElem.click();
-            dlAnchorElem.remove();
-        }
-
-        function importData(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const importedAccounts = JSON.parse(event.target.result);
-                        if (Array.isArray(importedAccounts)) {
-                            accounts = importedAccounts;
-                            saveToLocal();
-                            alert("Data Restored Successfully!");
-                            renderDashboard();
-                            if(document.getElementById('tab-list').classList.contains('block')) renderList();
-                        }
-                    } catch (err) { alert("Invalid File Format."); }
+        // --- ZIP EXPORT & IMPORT (Naya Feature JSZip ke sath) ---
+        // Yaha par ZIP file banane aur download karne ka logic hai
+        async function exportDataZip() {
+            try {
+                const zip = new JSZip();
+                
+                // Pura data ek object me daal rahe hain
+                const masterData = {
+                    version: "2.0",
+                    dateExported: new Date().toISOString(),
+                    accounts: accounts,
+                    clans: clans,
+                    market: marketItems
                 };
-                reader.readAsText(file);
+
+                // ZIP me JSON file banakar add karna
+                zip.file("CoC_Ultimate_Backup.json", JSON.stringify(masterData, null, 2));
+
+                // ZIP generate karna
+                const content = await zip.generateAsync({ type: "blob" });
+                
+                // Download trigger karna
+                const dl = document.createElement('a');
+                dl.href = URL.createObjectURL(content);
+                dl.download = `CoC_Vault_Pro_Backup_${new Date().toISOString().split('T')[0]}.zip`;
+                document.body.appendChild(dl);
+                dl.click();
+                dl.remove();
+            } catch (err) {
+                alert("Error exporting ZIP: " + err.message);
             }
+        }
+
+        // Yaha par ZIP file read aur restore karne ka logic hai
+        async function importDataZip(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const zip = new JSZip();
+                const loadedZip = await zip.loadAsync(file);
+                
+                // ZIP ke andar JSON file dhundna
+                const jsonFile = loadedZip.file("CoC_Ultimate_Backup.json");
+                if(!jsonFile) {
+                    // Agar purana JSON import kar rahe hain .zip ki jagah
+                    alert("Invalid Backup File. Looking for 'CoC_Ultimate_Backup.json' inside the zip.");
+                    return;
+                }
+
+                // File ko text me convert karna
+                const textData = await jsonFile.async("text");
+                const parsedData = JSON.parse(textData);
+
+                // Data check karna aur variables me daalna
+                if(parsedData.accounts) accounts = parsedData.accounts;
+                if(parsedData.clans) clans = parsedData.clans;
+                if(parsedData.market) marketItems = parsedData.market;
+                else {
+                    // Purana version ka fallback
+                    if(Array.isArray(parsedData)) accounts = parsedData; 
+                }
+
+                saveToLocal();
+                alert("Data Successfully Restored from ZIP!");
+                switchTab('home'); // Refresh UI
+            } catch (err) {
+                alert("Error importing file. Please ensure it is a valid ZIP backup. Error: " + err.message);
+            }
+            // File input reset karna
+            e.target.value = "";
         }
     </script>
 </body>
 </html>
-
-
-```
