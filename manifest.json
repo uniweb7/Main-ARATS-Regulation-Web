@@ -1,6 +1,6 @@
 {
-  "name": "ARATS Governance OS",
-  "short_name": "ARATS Governance OS Governmentof India",
+  "name": "ARATS Governance OS Government of India",
+  "short_name": "Government of India",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f8fafc",
